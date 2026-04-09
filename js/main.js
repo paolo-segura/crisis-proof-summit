@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
   initScrollAnimations();
   initCheckout();
+  initBgVideo();
 });
 
 // --- 1. Countdown Timer ---
@@ -341,4 +342,34 @@ function initCheckout() {
       }, 500);
     });
   }
+}
+
+// --- 7. Safari/mobile autoplay fix for background video ---
+
+function initBgVideo() {
+  const vid = document.querySelector('.bg-video-fixed');
+  if (!vid) return;
+
+  function tryPlay() {
+    var p = vid.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(function () {
+        // Autoplay blocked — try again on first user interaction
+        var events = ['touchstart', 'click', 'scroll'];
+        function playOnInteraction() {
+          vid.play();
+          events.forEach(function (e) {
+            document.removeEventListener(e, playOnInteraction);
+          });
+        }
+        events.forEach(function (e) {
+          document.addEventListener(e, playOnInteraction, { once: true, passive: true });
+        });
+      });
+    }
+  }
+
+  // Try immediately, and again after load in case Safari deferred it
+  tryPlay();
+  window.addEventListener('load', tryPlay);
 }
