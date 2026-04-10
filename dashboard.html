@@ -248,6 +248,10 @@
         <div class="stat-label">Revenue</div>
         <div class="stat-value gold" id="total-revenue">--</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">Participant Details</div>
+        <div class="stat-value teal" id="total-participants">--</div>
+      </div>
     </div>
 
     <div class="table-card">
@@ -293,6 +297,24 @@
           </tr>
         </thead>
         <tbody><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h2>Recent Participant Details</h2>
+      <table id="participant-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Role</th>
+            <th>Business Type</th>
+            <th>Referred By</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -378,19 +400,22 @@
     async function loadAll() {
       document.getElementById('last-updated').textContent = 'Loading…';
 
-      var visits, clicks, purchases;
+      var visits, clicks, purchases, participants;
       try {
-        var [vRes, cRes, pRes] = await Promise.all([
+        var [vRes, cRes, pRes, partRes] = await Promise.all([
           supabase.from(TABLE_VISITS).select('*').order('created_at', { ascending: false }),
           supabase.from(TABLE_CLICKS).select('*').order('created_at', { ascending: false }),
           supabase.from(TABLE_PURCHASES).select('*').order('created_at', { ascending: false }),
+          supabase.from(TABLE_PARTICIPANTS).select('*').order('created_at', { ascending: false }),
         ]);
         visits = vRes.data || [];
         clicks = cRes.data || [];
         purchases = pRes.data || [];
+        participants = partRes.data || [];
         if (vRes.error) console.warn('visits:', vRes.error);
         if (cRes.error) console.warn('clicks:', cRes.error);
         if (pRes.error) console.warn('purchases:', pRes.error);
+        if (partRes.error) console.warn('participants:', partRes.error);
       } catch (err) {
         document.getElementById('last-updated').textContent = 'Error loading data — check console';
         console.error(err);
@@ -403,6 +428,7 @@
       document.getElementById('total-purchases').textContent = purchases.length;
       var revenue = purchases.reduce(function (a, p) { return a + (parseFloat(p.amount) || 0); }, 0);
       document.getElementById('total-revenue').textContent = fmtPeso(revenue);
+      document.getElementById('total-participants').textContent = participants.length;
 
       // By source
       var bySource = {};
@@ -475,7 +501,32 @@
         }).join('');
       }
 
+      // Recent participant details
+      var partTbody = document.querySelector('#participant-table tbody');
+      if (!participants || participants.length === 0) {
+        partTbody.innerHTML = '<tr><td colspan="7" class="empty">No participant details submitted yet</td></tr>';
+      } else {
+        partTbody.innerHTML = participants.slice(0, 50).map(function (p) {
+          return '<tr>' +
+            '<td>' + fmtDate(p.created_at) + '</td>' +
+            '<td><strong>' + escapeHtml(p.full_name || '—') + '</strong></td>' +
+            '<td>' + escapeHtml(p.email || '—') + '</td>' +
+            '<td>' + escapeHtml(p.mobile_number || '—') + '</td>' +
+            '<td>' + escapeHtml(p.describes_you || '—') + '</td>' +
+            '<td>' + escapeHtml(p.business_type || '—') + '</td>' +
+            '<td>' + escapeHtml(p.referred_by || '—') + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
       document.getElementById('last-updated').textContent = 'Last updated: ' + fmtDateTime(new Date().toISOString());
+    }
+
+    function escapeHtml(str) {
+      if (str == null) return '';
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(String(str)));
+      return div.innerHTML;
     }
 
   </script>

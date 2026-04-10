@@ -65,16 +65,40 @@
       color: #9ca3af;
     }
     .thank-you-detail strong { color: #fff; }
-    .thank-you-home {
+    .thank-you-cta-primary {
       display: inline-block;
-      padding: 0.9rem 1.75rem;
-      background: var(--gold, #d4a542);
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #d4a542, #c49a38);
       color: #0a0e1a;
       font-weight: 700;
       border-radius: 10px;
       text-decoration: none;
       font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+      box-shadow: 0 6px 20px rgba(212, 165, 66, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
+    .thank-you-cta-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(212, 165, 66, 0.45);
+    }
+    .thank-you-cta-note {
+      display: block;
+      color: #9ca3af;
+      font-size: 0.78rem;
+      margin-top: 0.8rem;
+      line-height: 1.4;
+    }
+    .thank-you-home {
+      display: inline-block;
+      margin-top: 1.25rem;
+      color: #9ca3af;
+      font-size: 0.85rem;
+      text-decoration: underline;
+      font-family: 'Inter', sans-serif;
+    }
+    .thank-you-home:hover { color: #f3f4f6; }
   </style>
 </head>
 <body>
@@ -91,6 +115,13 @@
         <div>Time: <strong>9:00 AM – 6:00 PM</strong></div>
         <div>Venue: <strong>PTTC – Global MSME Academy, Pasay</strong></div>
       </div>
+      <a href="/participant-details" class="thank-you-cta-primary">
+        Complete Your Participant Details →
+      </a>
+      <small class="thank-you-cta-note">
+        Takes less than 2 minutes. Help us tailor the summit experience to you.
+      </small>
+      <br/>
       <a href="/the-new-business-normal" class="thank-you-home">Back to Event Page</a>
     </div>
   </div>
