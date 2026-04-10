@@ -328,8 +328,8 @@ function renderChart(rows) {
       datasets: [{
         label: 'Clicks',
         data: counts,
-        backgroundColor: '#3bb5c4',
-        hoverBackgroundColor: '#d4a542',
+        backgroundColor: '#4dd4c8',
+        hoverBackgroundColor: '#f5c777',
         borderRadius: 4,
         borderSkipped: false,
       }]
@@ -340,8 +340,8 @@ function renderChart(rows) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#111827',
-          borderColor: '#1e2a3a',
+          backgroundColor: '#0f2336',
+          borderColor: '#1e3449',
           borderWidth: 1,
           titleColor: '#e8eaf0',
           bodyColor: '#9aa3b8',
