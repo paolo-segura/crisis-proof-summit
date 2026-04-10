@@ -111,7 +111,10 @@ function initSmoothScroll() {
       navLinks.classList.remove('mobile-open');
       navToggle.classList.remove('open');
       navToggle.setAttribute('aria-expanded', 'false');
+      var scrollY = document.body.style.top;
       document.body.classList.remove('nav-open');
+      document.body.style.top = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
 
     const targetTop = target.getBoundingClientRect().top + window.scrollY - NAVBAR_OFFSET;
@@ -170,11 +173,15 @@ function initNavbar() {
         navLinks.classList.remove('mobile-open');
         navToggle.classList.remove('open');
         navToggle.setAttribute('aria-expanded', 'false');
+        var scrollY = document.body.style.top;
         document.body.classList.remove('nav-open');
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
       } else {
         navLinks.classList.add('mobile-open');
         navToggle.classList.add('open');
         navToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.top = '-' + window.scrollY + 'px';
         document.body.classList.add('nav-open');
       }
     });
