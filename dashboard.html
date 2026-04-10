@@ -116,6 +116,84 @@
     .empty { color: var(--muted); font-style: italic; padding: 1rem 0; }
     .loading { color: var(--muted); padding: 1rem 0; }
 
+    /* Login gate */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .login-card {
+      max-width: 380px;
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+    }
+    .login-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 0.35rem 0;
+      letter-spacing: 1px;
+    }
+    .login-sub { text-align: center; color: var(--muted); font-size: 0.8rem; margin-bottom: 1.5rem; }
+    .login-field { margin-bottom: 1rem; }
+    .login-field label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .login-field input:focus { outline: none; border-color: var(--gold); }
+    .login-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    .login-btn:hover { filter: brightness(1.1); }
+    .login-error {
+      color: #f87171;
+      font-size: 0.8rem;
+      text-align: center;
+      margin-top: 0.75rem;
+      min-height: 1rem;
+    }
+    .logout-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .logout-btn:hover { color: var(--text); border-color: var(--text); }
+
     @media (max-width: 600px) {
       h1 { font-size: 1.4rem; }
       .stat-value { font-size: 1.5rem; }
@@ -123,13 +201,34 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <!-- Login gate -->
+  <div class="login-wrap" id="login-wrap">
+    <form class="login-card" id="login-form" autocomplete="off">
+      <h1 class="login-title">Dashboard Access</h1>
+      <p class="login-sub">THE NEW BUSINESS NORMAL</p>
+      <div class="login-field">
+        <label for="login-user">Username</label>
+        <input type="text" id="login-user" autocomplete="username" required />
+      </div>
+      <div class="login-field">
+        <label for="login-pass">Password</label>
+        <input type="password" id="login-pass" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="login-btn">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+
+  <div class="wrap" id="dashboard-wrap" style="display:none;">
     <div class="header">
       <div>
         <h1>THE NEW BUSINESS NORMAL — Dashboard</h1>
         <div class="subtitle" id="last-updated">Loading…</div>
       </div>
-      <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+      <div style="display:flex; gap:0.5rem;">
+        <button class="logout-btn" onclick="logout()">Log Out</button>
+        <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+      </div>
     </div>
 
     <div class="stat-grid">
@@ -201,6 +300,50 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
   <script>
+    // --- Auth gate (client-side only — not real security, just a "don't stumble in" layer) ---
+    var AUTH_KEY = 'nbn_dashboard_auth';
+    var AUTH_USER = 'admin';
+    var AUTH_PASS = 'expoulive';
+
+    function showDashboard() {
+      document.getElementById('login-wrap').style.display = 'none';
+      document.getElementById('dashboard-wrap').style.display = 'block';
+      loadAll();
+      setInterval(loadAll, 60000);
+    }
+
+    function showLogin() {
+      document.getElementById('login-wrap').style.display = 'flex';
+      document.getElementById('dashboard-wrap').style.display = 'none';
+    }
+
+    function logout() {
+      sessionStorage.removeItem(AUTH_KEY);
+      location.reload();
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var user = document.getElementById('login-user').value.trim();
+      var pass = document.getElementById('login-pass').value;
+      var err = document.getElementById('login-error');
+      if (user === AUTH_USER && pass === AUTH_PASS) {
+        sessionStorage.setItem(AUTH_KEY, '1');
+        err.textContent = '';
+        showDashboard();
+      } else {
+        err.textContent = 'Invalid username or password';
+        document.getElementById('login-pass').value = '';
+      }
+    });
+
+    // If already authed in this session, skip login
+    if (sessionStorage.getItem(AUTH_KEY) === '1') {
+      showDashboard();
+    }
+
+    // --- Dashboard ---
+
     function fmtPeso(n) {
       if (n == null || isNaN(n)) return '₱0';
       return '₱' + Number(n).toLocaleString('en-PH', { maximumFractionDigits: 0 });
@@ -314,8 +457,6 @@
       document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleString('en-PH');
     }
 
-    loadAll();
-    setInterval(loadAll, 60000); // auto-refresh every 60s
   </script>
 </body>
 </html>
