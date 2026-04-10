@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
+  initEarlyBird();
   initFAQ();
   initSmoothScroll();
   initNavbar();
@@ -55,6 +56,67 @@ function initCountdown() {
 
   updateTimers();
   setInterval(updateTimers, 1000);
+}
+
+// --- 1b. Early Bird → Regular auto-switch ---
+
+function initEarlyBird() {
+  // Early bird ends May 2, 2026 at 00:00 PHT (UTC+8)
+  var earlyBirdEnd = new Date('2026-05-02T00:00:00+08:00');
+
+  var card = document.getElementById('general-ticket-card');
+  var badge = document.getElementById('general-badge');
+  var strike = document.getElementById('general-price-strike');
+  var priceAmount = document.getElementById('general-price-amount');
+  var btn = document.getElementById('general-ticket-btn');
+  var countdownEl = document.getElementById('early-bird-countdown');
+
+  if (!card) return;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function applyRegularRate() {
+    if (badge) badge.textContent = 'REGULAR RATE';
+    if (strike) strike.style.display = 'none';
+    if (priceAmount) priceAmount.textContent = '2,500';
+    if (btn) btn.setAttribute('data-tier', 'regular');
+    if (countdownEl) countdownEl.style.display = 'none';
+  }
+
+  function updateEarlyBirdCountdown() {
+    var now = new Date();
+    var diff = earlyBirdEnd - now;
+
+    if (diff <= 0) {
+      applyRegularRate();
+      return true; // done
+    }
+
+    var totalSeconds = Math.floor(diff / 1000);
+    var days = Math.floor(totalSeconds / 86400);
+    var hours = Math.floor((totalSeconds % 86400) / 3600);
+    var minutes = Math.floor((totalSeconds % 3600) / 60);
+    var seconds = totalSeconds % 60;
+
+    if (countdownEl) {
+      var d = countdownEl.querySelector('[data-eb-unit="days"]');
+      var h = countdownEl.querySelector('[data-eb-unit="hours"]');
+      var m = countdownEl.querySelector('[data-eb-unit="minutes"]');
+      var s = countdownEl.querySelector('[data-eb-unit="seconds"]');
+      if (d) d.textContent = pad(days);
+      if (h) h.textContent = pad(hours);
+      if (m) m.textContent = pad(minutes);
+      if (s) s.textContent = pad(seconds);
+    }
+    return false;
+  }
+
+  var done = updateEarlyBirdCountdown();
+  if (!done) {
+    var interval = setInterval(function () {
+      if (updateEarlyBirdCountdown()) clearInterval(interval);
+    }, 1000);
+  }
 }
 
 // --- 2. FAQ Accordion ---

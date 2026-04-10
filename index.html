@@ -274,34 +274,34 @@
         <h2 class="section-heading">Choose Your Experience</h2>
         <p class="section-sub">&#8369;27,000+ in business tools. Your investment starts at &#8369;1,999.</p>
 
-        <div class="pricing-grid">
+        <div class="pricing-grid pricing-grid-2col">
 
-          <!-- Early Bird -->
-          <article class="pricing-card" aria-label="Early Bird ticket">
-            <div class="pricing-badge">EARLY BIRD &mdash; LIMITED</div>
-            <div class="pricing-price"><span class="price-currency">&#8369;</span>1,999</div>
+          <!-- General (Early Bird → Regular after May 2) -->
+          <article id="general-ticket-card" class="pricing-card" aria-label="General ticket">
+            <div class="pricing-badge" id="general-badge">EARLY BIRD &mdash; LIMITED</div>
+            <div class="pricing-price">
+              <span class="price-strike" id="general-price-strike"><span class="price-currency">&#8369;</span>2,500</span>
+              <span class="price-current"><span class="price-currency">&#8369;</span><span id="general-price-amount">1,999</span></span>
+            </div>
+            <div class="early-bird-countdown" id="early-bird-countdown" aria-label="Early bird countdown">
+              <div class="eb-countdown-label">Early Bird ends in</div>
+              <div class="eb-countdown-timer">
+                <div class="eb-countdown-unit"><span class="eb-countdown-value" data-eb-unit="days">--</span><span class="eb-countdown-sublabel">Days</span></div>
+                <div class="eb-countdown-sep">:</div>
+                <div class="eb-countdown-unit"><span class="eb-countdown-value" data-eb-unit="hours">--</span><span class="eb-countdown-sublabel">Hrs</span></div>
+                <div class="eb-countdown-sep">:</div>
+                <div class="eb-countdown-unit"><span class="eb-countdown-value" data-eb-unit="minutes">--</span><span class="eb-countdown-sublabel">Min</span></div>
+                <div class="eb-countdown-sep">:</div>
+                <div class="eb-countdown-unit"><span class="eb-countdown-value" data-eb-unit="seconds">--</span><span class="eb-countdown-sublabel">Sec</span></div>
+              </div>
+            </div>
             <ul class="pricing-features">
               <li>Full-day access to all sessions</li>
               <li>Event kit and materials</li>
               <li>Networking opportunities</li>
               <li>The New Normal Blueprint workbook</li>
             </ul>
-            <button class="btn btn-secondary ticket-btn" data-tier="early_bird">
-              Reserve Now
-            </button>
-          </article>
-
-          <!-- Regular -->
-          <article class="pricing-card" aria-label="Regular ticket">
-            <div class="pricing-badge">FULL ACCESS</div>
-            <div class="pricing-price"><span class="price-currency">&#8369;</span>2,500</div>
-            <ul class="pricing-features">
-              <li>Full-day access to all sessions</li>
-              <li>Event kit and materials</li>
-              <li>Networking opportunities</li>
-              <li>The New Normal Blueprint workbook</li>
-            </ul>
-            <button class="btn btn-secondary ticket-btn" data-tier="regular">
+            <button class="btn btn-secondary ticket-btn" id="general-ticket-btn" data-tier="early_bird">
               Reserve Now
             </button>
           </article>
