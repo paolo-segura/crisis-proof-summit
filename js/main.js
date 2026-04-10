@@ -388,12 +388,48 @@ function initCheckout() {
     });
   });
 
-  // Checkout links → open in iframe modal
+  // Checkout links → log click + open in iframe modal
   const checkoutLinks = {
     early_bird: 'https://scaleyourorg.net/checkout/PROD-1775779034209',
     regular: 'https://scaleyourorg.net/checkout/PROD-1775779096693',
     vip: 'https://scaleyourorg.net/checkout/PROD-1775779147241'
   };
+
+  function buildCheckoutURL(baseURL, tier) {
+    var tracking = window.NBN_TRACKING || {};
+    var sessionId = tracking.getSessionId ? tracking.getSessionId() : '';
+    var utm = tracking.getUTMParams ? tracking.getUTMParams() : {};
+    var url = new URL(baseURL);
+    url.searchParams.set('session_id', sessionId);
+    url.searchParams.set('tier', tier);
+    if (utm.utm_source) url.searchParams.set('utm_source', utm.utm_source);
+    if (utm.utm_medium) url.searchParams.set('utm_medium', utm.utm_medium);
+    if (utm.utm_campaign) url.searchParams.set('utm_campaign', utm.utm_campaign);
+    if (utm.utm_content) url.searchParams.set('utm_content', utm.utm_content);
+    if (utm.utm_term) url.searchParams.set('utm_term', utm.utm_term);
+    return url.toString();
+  }
+
+  function logClick(tier) {
+    if (typeof supabase === 'undefined' || !supabase) return;
+    var tracking = window.NBN_TRACKING || {};
+    var sessionId = tracking.getSessionId ? tracking.getSessionId() : null;
+    var utm = tracking.getUTMParams ? tracking.getUTMParams() : {};
+    supabase
+      .from(TABLE_CLICKS)
+      .insert({
+        session_id: sessionId,
+        ticket_tier: tier,
+        utm_source: utm.utm_source,
+        utm_medium: utm.utm_medium,
+        utm_campaign: utm.utm_campaign,
+        utm_content: utm.utm_content,
+        utm_term: utm.utm_term,
+      })
+      .then(function (res) {
+        if (res && res.error) console.warn('Click log failed:', res.error.message);
+      });
+  }
 
   function openCheckoutModal(url) {
     var modal = document.getElementById('checkout-modal');
@@ -424,7 +460,9 @@ function initCheckout() {
     btn.addEventListener('click', function (e) {
       e.preventDefault();
       var tier = btn.dataset.tier || 'early_bird';
-      var payURL = checkoutLinks[tier] || checkoutLinks.early_bird;
+      var baseURL = checkoutLinks[tier] || checkoutLinks.early_bird;
+      var payURL = buildCheckoutURL(baseURL, tier);
+      logClick(tier);
       openCheckoutModal(payURL);
     });
   });

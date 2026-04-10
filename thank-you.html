@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Thank You — THE NEW BUSINESS NORMAL</title>
+  <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .thank-you-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    .thank-you-card {
+      max-width: 560px;
+      background: rgba(10, 14, 26, 0.88);
+      border: 1px solid rgba(212, 165, 66, 0.35);
+      border-radius: 18px;
+      padding: 3rem 2rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .thank-you-check {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1.25rem;
+      border-radius: 50%;
+      background: rgba(212, 165, 66, 0.15);
+      border: 2px solid var(--gold, #d4a542);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.25rem;
+      color: var(--gold, #d4a542);
+    }
+    .thank-you-title {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 2rem;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      letter-spacing: 1px;
+    }
+    .thank-you-sub {
+      color: #cbd5e1;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .thank-you-detail {
+      padding: 1rem 1.25rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      text-align: left;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .thank-you-detail strong { color: #fff; }
+    .thank-you-home {
+      display: inline-block;
+      padding: 0.9rem 1.75rem;
+      background: var(--gold, #d4a542);
+      color: #0a0e1a;
+      font-weight: 700;
+      border-radius: 10px;
+      text-decoration: none;
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="thank-you-wrap">
+    <div class="thank-you-card">
+      <div class="thank-you-check">&#10003;</div>
+      <h1 class="thank-you-title">You're In!</h1>
+      <p class="thank-you-sub">
+        Your seat at <strong>THE NEW BUSINESS NORMAL</strong> is confirmed.<br/>
+        Check your email for your ticket and event details.
+      </p>
+      <div class="thank-you-detail">
+        <div>Event: <strong>May 9, 2026 (Saturday)</strong></div>
+        <div>Time: <strong>9:00 AM – 6:00 PM</strong></div>
+        <div>Venue: <strong>PTTC – Global MSME Academy, Pasay</strong></div>
+      </div>
+      <a href="/the-new-business-normal" class="thank-you-home">Back to Event Page</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script>
+    // Log a purchase when scaleyourorg.net redirects back here.
+    // Expected query params (best-effort — whatever scaleyourorg.net passes through):
+    //   session_id, tier, utm_source, utm_medium, utm_campaign, order_id, amount, email
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var sessionId = params.get('session_id');
+      var tier = params.get('tier');
+      var orderId = params.get('order_id') || params.get('transaction_id') || params.get('id') || null;
+      var amount = params.get('amount') || params.get('total') || null;
+      var email = params.get('email') || null;
+
+      // Fall back to localStorage for session/utm if provider stripped them
+      var storedSession = localStorage.getItem('nbn_session_id');
+      var storedUTM = {};
+      try { storedUTM = JSON.parse(localStorage.getItem('nbn_utm') || '{}'); } catch {}
+
+      if (!sessionId) sessionId = storedSession;
+
+      if (typeof supabase === 'undefined' || !supabase) return;
+
+      supabase
+        .from(TABLE_PURCHASES)
+        .insert({
+          session_id: sessionId,
+          ticket_tier: tier,
+          order_id: orderId,
+          amount: amount ? parseFloat(amount) : null,
+          email: email,
+          utm_source: params.get('utm_source') || storedUTM.utm_source || null,
+          utm_medium: params.get('utm_medium') || storedUTM.utm_medium || null,
+          utm_campaign: params.get('utm_campaign') || storedUTM.utm_campaign || null,
+          utm_content: params.get('utm_content') || storedUTM.utm_content || null,
+          utm_term: params.get('utm_term') || storedUTM.utm_term || null,
+          raw_query: window.location.search || null,
+        })
+        .then(function (res) {
+          if (res && res.error) console.warn('Purchase log failed:', res.error.message);
+        });
+    })();
+  </script>
+</body>
+</html>

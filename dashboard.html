@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Dashboard — The New Business Normal</title>
+  <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --border: rgba(255,255,255,0.08);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --gold: #d4a542;
+      --teal: #3bb5c4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+    .refresh-btn {
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .refresh-btn:hover { filter: brightness(1.1); }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.teal { color: var(--teal); }
+
+    .table-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+    .table-card h2 {
+      font-family: 'Oswald', sans-serif;
+      margin: 0 0 1rem 0;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      padding: 0.75rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td.num { text-align: right; font-family: 'Oswald', sans-serif; font-size: 1rem; }
+    tr:last-child td { border-bottom: none; }
+    .empty { color: var(--muted); font-style: italic; padding: 1rem 0; }
+    .loading { color: var(--muted); padding: 1rem 0; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.4rem; }
+      .stat-value { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>THE NEW BUSINESS NORMAL — Dashboard</h1>
+        <div class="subtitle" id="last-updated">Loading…</div>
+      </div>
+      <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Visits</div>
+        <div class="stat-value" id="total-visits">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Clicks</div>
+        <div class="stat-value teal" id="total-clicks">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Purchases</div>
+        <div class="stat-value gold" id="total-purchases">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value gold" id="total-revenue">--</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h2>By Source (UTM)</h2>
+      <table id="source-table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th style="text-align:right;">Visits</th>
+            <th style="text-align:right;">Clicks</th>
+            <th style="text-align:right;">Purchases</th>
+            <th style="text-align:right;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h2>Clicks by Tier</h2>
+      <table id="tier-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th style="text-align:right;">Clicks</th>
+            <th style="text-align:right;">Purchases</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h2>Recent Purchases</h2>
+      <table id="purchase-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Tier</th>
+            <th>Source</th>
+            <th>Email</th>
+            <th style="text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script>
+    function fmtPeso(n) {
+      if (n == null || isNaN(n)) return '₱0';
+      return '₱' + Number(n).toLocaleString('en-PH', { maximumFractionDigits: 0 });
+    }
+    function fmtDate(s) {
+      if (!s) return '—';
+      var d = new Date(s);
+      return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadAll() {
+      document.getElementById('last-updated').textContent = 'Loading…';
+
+      var visits, clicks, purchases;
+      try {
+        var [vRes, cRes, pRes] = await Promise.all([
+          supabase.from(TABLE_VISITS).select('*').order('created_at', { ascending: false }),
+          supabase.from(TABLE_CLICKS).select('*').order('created_at', { ascending: false }),
+          supabase.from(TABLE_PURCHASES).select('*').order('created_at', { ascending: false }),
+        ]);
+        visits = vRes.data || [];
+        clicks = cRes.data || [];
+        purchases = pRes.data || [];
+        if (vRes.error) console.warn('visits:', vRes.error);
+        if (cRes.error) console.warn('clicks:', cRes.error);
+        if (pRes.error) console.warn('purchases:', pRes.error);
+      } catch (err) {
+        document.getElementById('last-updated').textContent = 'Error loading data — check console';
+        console.error(err);
+        return;
+      }
+
+      // Top stats
+      document.getElementById('total-visits').textContent = visits.length;
+      document.getElementById('total-clicks').textContent = clicks.length;
+      document.getElementById('total-purchases').textContent = purchases.length;
+      var revenue = purchases.reduce(function (a, p) { return a + (parseFloat(p.amount) || 0); }, 0);
+      document.getElementById('total-revenue').textContent = fmtPeso(revenue);
+
+      // By source
+      var bySource = {};
+      function ensure(src) {
+        if (!bySource[src]) bySource[src] = { visits: 0, clicks: 0, purchases: 0, revenue: 0 };
+        return bySource[src];
+      }
+      visits.forEach(function (v) { ensure(v.utm_source || '(direct)').visits++; });
+      clicks.forEach(function (c) { ensure(c.utm_source || '(direct)').clicks++; });
+      purchases.forEach(function (p) {
+        var s = ensure(p.utm_source || '(direct)');
+        s.purchases++;
+        s.revenue += parseFloat(p.amount) || 0;
+      });
+      var sourceRows = Object.keys(bySource).map(function (k) {
+        return { source: k, ...bySource[k] };
+      }).sort(function (a, b) { return b.purchases - a.purchases || b.clicks - a.clicks || b.visits - a.visits; });
+
+      var tbody = document.querySelector('#source-table tbody');
+      if (sourceRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
+      } else {
+        tbody.innerHTML = sourceRows.map(function (r) {
+          return '<tr>' +
+            '<td><strong>' + r.source + '</strong></td>' +
+            '<td class="num">' + r.visits + '</td>' +
+            '<td class="num">' + r.clicks + '</td>' +
+            '<td class="num">' + r.purchases + '</td>' +
+            '<td class="num">' + fmtPeso(r.revenue) + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      // By tier
+      var byTier = {};
+      function ensureTier(t) {
+        if (!byTier[t]) byTier[t] = { clicks: 0, purchases: 0 };
+        return byTier[t];
+      }
+      clicks.forEach(function (c) { ensureTier(c.ticket_tier || '(unknown)').clicks++; });
+      purchases.forEach(function (p) { ensureTier(p.ticket_tier || '(unknown)').purchases++; });
+      var tierRows = Object.keys(byTier).map(function (k) { return { tier: k, ...byTier[k] }; });
+
+      var tierTbody = document.querySelector('#tier-table tbody');
+      if (tierRows.length === 0) {
+        tierTbody.innerHTML = '<tr><td colspan="3" class="empty">No clicks yet</td></tr>';
+      } else {
+        tierTbody.innerHTML = tierRows.map(function (r) {
+          return '<tr>' +
+            '<td><strong>' + r.tier + '</strong></td>' +
+            '<td class="num">' + r.clicks + '</td>' +
+            '<td class="num">' + r.purchases + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      // Recent purchases
+      var pTbody = document.querySelector('#purchase-table tbody');
+      if (purchases.length === 0) {
+        pTbody.innerHTML = '<tr><td colspan="5" class="empty">No purchases yet</td></tr>';
+      } else {
+        pTbody.innerHTML = purchases.slice(0, 25).map(function (p) {
+          return '<tr>' +
+            '<td>' + fmtDate(p.created_at) + '</td>' +
+            '<td>' + (p.ticket_tier || '—') + '</td>' +
+            '<td>' + (p.utm_source || '(direct)') + '</td>' +
+            '<td>' + (p.email || '—') + '</td>' +
+            '<td class="num">' + fmtPeso(p.amount) + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleString('en-PH');
+    }
+
+    loadAll();
+    setInterval(loadAll, 60000); // auto-refresh every 60s
+  </script>
+</body>
+</html>
