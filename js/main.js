@@ -450,11 +450,33 @@ function initCheckout() {
 
   var modalBackdrop = document.querySelector('.checkout-modal-backdrop');
   var modalClose = document.querySelector('.checkout-modal-close');
+  var doneBtn = document.getElementById('checkout-done-btn');
   if (modalBackdrop) modalBackdrop.addEventListener('click', closeCheckoutModal);
   if (modalClose) modalClose.addEventListener('click', closeCheckoutModal);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeCheckoutModal();
   });
+
+  // Done-paying handoff: close the modal and send them to /thank-you
+  // with the session + UTM in the URL so thank-you.html can log the
+  // purchase and Brevo can pick it up later.
+  if (doneBtn) {
+    doneBtn.addEventListener('click', function () {
+      var tracking = window.NBN_TRACKING || {};
+      var sessionId = tracking.getSessionId ? tracking.getSessionId() : '';
+      var utm = tracking.getUTMParams ? tracking.getUTMParams() : {};
+      var params = new URLSearchParams();
+      if (sessionId) params.set('session_id', sessionId);
+      if (utm.utm_source) params.set('utm_source', utm.utm_source);
+      if (utm.utm_medium) params.set('utm_medium', utm.utm_medium);
+      if (utm.utm_campaign) params.set('utm_campaign', utm.utm_campaign);
+      if (utm.utm_content) params.set('utm_content', utm.utm_content);
+      if (utm.utm_term) params.set('utm_term', utm.utm_term);
+      params.set('handoff', 'user');
+      closeCheckoutModal();
+      window.location.href = '/thank-you?' + params.toString();
+    });
+  }
 
   document.querySelectorAll('.ticket-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {

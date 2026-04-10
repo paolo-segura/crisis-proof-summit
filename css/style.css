@@ -875,13 +875,15 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid var(--border); position: re
   position: relative;
   width: 90vw;
   max-width: 520px;
-  height: 85vh;
-  max-height: 800px;
+  height: 90vh;
+  max-height: 860px;
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: modalSlideUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalSlideUp {
@@ -924,9 +926,66 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid var(--border); position: re
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   border: none;
   background: #fff;
+}
+
+/* Done-paying handoff banner */
+.checkout-modal-handoff {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, #0a0e1a 0%, #111827 100%);
+  border-top: 2px solid var(--gold);
+  padding: 0.9rem 1rem 1rem;
+  text-align: center;
+}
+.checkout-done-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: linear-gradient(135deg, #d4a542, #c49a38);
+  color: #0a0e1a;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 14px rgba(212, 165, 66, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+}
+.checkout-done-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(212, 165, 66, 0.45);
+  filter: brightness(1.05);
+}
+.checkout-done-btn .done-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #0a0e1a;
+  color: #d4a542;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+.checkout-done-btn .done-arrow { font-weight: 900; }
+.checkout-done-note {
+  margin: 0.55rem 0 0;
+  color: #9ca3af;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2px;
+}
+@media (max-width: 480px) {
+  .checkout-done-btn { font-size: 0.85rem; padding: 0.8rem 0.75rem; }
+  .checkout-done-note { font-size: 0.68rem; }
 }
 
 /* ==============================
