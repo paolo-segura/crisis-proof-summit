@@ -351,7 +351,28 @@
     function fmtDate(s) {
       if (!s) return '—';
       var d = new Date(s);
-      return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleString('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
+      });
+    }
+    function fmtDateTime(s) {
+      if (!s) return '—';
+      var d = new Date(s);
+      return d.toLocaleString('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
+      }) + ' PHT';
     }
 
     async function loadAll() {
@@ -454,7 +475,7 @@
         }).join('');
       }
 
-      document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleString('en-PH');
+      document.getElementById('last-updated').textContent = 'Last updated: ' + fmtDateTime(new Date().toISOString());
     }
 
   </script>
