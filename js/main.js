@@ -111,7 +111,7 @@ function initSmoothScroll() {
       navLinks.classList.remove('mobile-open');
       navToggle.classList.remove('open');
       navToggle.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
+      document.body.classList.remove('nav-open');
     }
 
     const targetTop = target.getBoundingClientRect().top + window.scrollY - NAVBAR_OFFSET;
@@ -170,12 +170,12 @@ function initNavbar() {
         navLinks.classList.remove('mobile-open');
         navToggle.classList.remove('open');
         navToggle.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+        document.body.classList.remove('nav-open');
       } else {
         navLinks.classList.add('mobile-open');
         navToggle.classList.add('open');
         navToggle.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('nav-open');
       }
     });
   }

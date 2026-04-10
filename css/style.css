@@ -198,41 +198,43 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .nav-toggle.open .hamburger-line:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
 /* Mobile menu */
+body.nav-open { overflow: hidden; }
+
 .nav-links.mobile-open {
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: fixed;
   top: 0;
-  left: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
+  width: 280px;
   background: rgba(10, 14, 26, 0.97);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding: 2rem;
-  gap: 1.5rem;
+  border-left: 1px solid var(--border);
+  padding: 5rem 2rem 2rem;
+  gap: 1.25rem;
   z-index: 999;
-  animation: fadeIn 0.25s ease;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 .nav-links.mobile-open .nav-link {
-  font-size: 1.25rem;
-  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  padding: 1rem 1rem;
   width: 100%;
   border-radius: 10px;
-  text-align: center;
 }
 .nav-links.mobile-open .nav-cta {
   margin-left: 0;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   text-align: center;
-  font-size: 1.25rem;
-  padding: 1.1rem 1.25rem;
+  font-size: 1.1rem;
+  padding: 1rem 1.25rem;
 }
 
 /* ==============================
