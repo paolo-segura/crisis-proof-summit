@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>You just made the smartest business decision this quarter</title>
   <!--[if mso]>
   <noscript>
@@ -31,6 +33,17 @@
       h1 { font-size: 26px !important; }
       h2 { font-size: 20px !important; }
     }
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      body, .body { background-color: #0a0e1a !important; }
+      .email-container, .content-area { background-color: #111827 !important; }
+      .header-area { background-color: #0d1224 !important; }
+      u + .body .email-container { background-color: #111827 !important; }
+    }
+    [data-ogsc] .email-container { background-color: #111827 !important; }
+    [data-ogsc] .header-area { background-color: #0d1224 !important; }
+    [data-ogsc] .cta-button-td { background-color: #d4a542 !important; }
+    [data-ogsc] .cta-button-td a { color: #0a0e1a !important; }
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0e1a;font-family:'Inter',Arial,Helvetica,sans-serif;">
@@ -49,10 +62,21 @@
 
           <!-- HEADER -->
           <tr>
-            <td class="header-padding" style="background-color:#0d1224;border-top:3px solid #d4a542;border-radius:8px 8px 0 0;padding:36px 40px;text-align:center;">
-              <p style="margin:0 0 4px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;color:#d4a542;text-transform:uppercase;">CRISIS-PROOF</p>
-              <p style="margin:0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;color:#3bb5c4;text-transform:uppercase;">BUSINESS SUMMIT</p>
-              <p style="margin:12px 0 0 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:13px;color:#6b7280;letter-spacing:1px;">MAY 10, 2026</p>
+            <td style="background-color:#0d1224;border-top:3px solid #d4a542;border-radius:8px 8px 0 0;padding:32px 40px 24px 40px;text-align:center;">
+              <!-- Logos -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 16px 0;">
+  <tr>
+    <td align="left" width="50%">
+      <img src="https://crisis-proof-summit.vercel.app/assets/images/expou-logo.png" alt="Exponential University" width="120" style="display:block;width:120px;height:auto;" />
+    </td>
+    <td align="right" width="50%">
+      <img src="https://crisis-proof-summit.vercel.app/assets/images/gencys-logo.png" alt="Gencys Group" width="120" style="display:block;width:120px;height:auto;margin-left:auto;" />
+    </td>
+  </tr>
+</table>
+              <p style="margin:0 0 6px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#d4a542;">Exponential University &times; Gencys Group</p>
+              <h1 style="margin:0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#ffffff;line-height:1.2;">THE NEW BUSINESS NORMAL</h1>
+              <p style="margin:10px 0 0 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">May 10, 2026 &bull; PTTC Manila</p>
             </td>
           </tr>
 
@@ -65,7 +89,7 @@
               <div style="width:48px;height:3px;background-color:#d4a542;margin:0 0 24px 0;"></div>
 
               <p style="margin:0 0 20px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:16px;color:#e5e7eb;line-height:1.7;">
-                You just secured your seat at the <strong style="color:#ffffff;">Crisis-Proof Business Summit</strong>, and that tells us something important about you: you're not the kind of entrepreneur who waits for things to get better. <strong style="color:#d4a542;">You build.</strong>
+                You just secured your seat at <strong style="color:#ffffff;">The New Business Normal</strong>, and that tells us something important about you: you're not the kind of entrepreneur who waits for things to get better. <strong style="color:#d4a542;">You build.</strong>
               </p>
 
               <!-- Pain block -->
@@ -148,7 +172,7 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 32px 0;">
                 <tr>
                   <td align="center">
-                    <a class="cta-button" href="[ADD_TO_CALENDAR_LINK]" target="_blank" style="display:inline-block;background-color:#d4a542;color:#0a0e1a;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:6px;letter-spacing:0.5px;min-height:44px;line-height:1.2;">
+                    <a class="cta-button" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Crisis-Proof+Business+Summit&dates=20260510T010000Z/20260510T100000Z&location=Philippine+Trade+Training+Center+-+Global+MSME+Academy,+Sen.+Gil+J.+Puyat+Ave,+Pasay,+Metro+Manila&details=Join+1,500+entrepreneurs+for+the+Crisis-Proof+Business+Summit.+Build+your+Crisis-Proof+Blueprint+using+the+4-Pillar+Framework." target="_blank" style="display:inline-block;background-color:#d4a542;color:#0a0e1a;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:6px;letter-spacing:0.5px;line-height:1;">
                       Add to Calendar
                     </a>
                   </td>
@@ -171,15 +195,23 @@
 
           <!-- FOOTER -->
           <tr>
-            <td class="footer-padding" style="background-color:#0d1224;border-radius:0 0 8px 8px;padding:28px 40px;text-align:center;border-bottom:3px solid #1f2937;">
-              <p style="margin:0 0 8px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:#6b7280;">
-                <span style="color:#d4a542;">Exponential University</span> &nbsp;&times;&nbsp; <span style="color:#3bb5c4;">Gencys Group</span>
-              </p>
-              <p style="margin:0 0 12px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">[Company Address, City, Philippines]</p>
-              <p style="margin:0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">
-                <a href="mailto:hello@crisisproofsummit.com" style="color:#6b7280;text-decoration:none;">hello@crisisproofsummit.com</a>
-                &nbsp;&bull;&nbsp;
-                <a href="[UNSUBSCRIBE_LINK]" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>
+            <td style="background-color:#0a0e1a;padding:28px 40px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #1f2937;border-top:1px solid #1f2937;">
+              <!-- Organizer logos -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="80%" style="margin:0 auto 14px auto;">
+  <tr>
+    <td align="left" width="50%">
+      <img src="https://crisis-proof-summit.vercel.app/assets/images/expou-logo.png" alt="Exponential University" width="80" style="display:block;width:80px;height:auto;opacity:0.7;" />
+    </td>
+    <td align="right" width="50%">
+      <img src="https://crisis-proof-summit.vercel.app/assets/images/gencys-logo.png" alt="Gencys Group" width="80" style="display:block;width:80px;height:auto;opacity:0.7;margin-left:auto;" />
+    </td>
+  </tr>
+</table>
+              <p style="margin:0 0 6px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:#6b7280;letter-spacing:0.5px;">&copy; 2026 Exponential University &times; Gencys Group</p>
+              <p style="margin:0 0 12px 0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;color:#4b5563;line-height:1.6;">You received this because you registered for The New Business Normal event.</p>
+              <p style="margin:0;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;">
+                <a href="[UNSUBSCRIBE_LINK]" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a> &nbsp;&bull;&nbsp;
+                <a href="mailto:hello@exponentialuniversity.ph" style="color:#6b7280;text-decoration:underline;">Contact Us</a>
               </p>
             </td>
           </tr>

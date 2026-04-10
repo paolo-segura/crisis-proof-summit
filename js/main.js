@@ -224,8 +224,8 @@ function initCheckout() {
   };
 
   const tierIncludes = {
-    early_bird: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'Crisis-Proof Blueprint', 'Networking opportunities'],
-    regular: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'Crisis-Proof Blueprint', 'Networking opportunities'],
+    early_bird: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The New Normal Blueprint', 'Networking opportunities'],
+    regular: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The New Normal Blueprint', 'Networking opportunities'],
     vip: ['Everything in Regular +', 'VIP Registration Lane', '6-Month ExU Access', 'Exclusive Mastermind Session'],
   };
 
@@ -319,7 +319,59 @@ function initCheckout() {
     });
   });
 
-  // Checkout form submit → redirect to Paymongo
+  // Checkout form submit → open modal with iframe (fallback: redirect)
+  const checkoutLinks = {
+    early_bird: 'https://scaleyourorg.net/checkout/PROD-1775779034209',
+    regular: 'https://scaleyourorg.net/checkout/PROD-1775779096693',
+    vip: 'https://scaleyourorg.net/checkout/PROD-1775779147241'
+  };
+
+  function openCheckoutModal(url) {
+    const modal = document.getElementById('checkout-modal');
+    const iframe = document.getElementById('checkout-iframe');
+    if (!modal || !iframe) { window.location.href = url; return; }
+
+    iframe.src = '';
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    // If iframe fails to load (X-Frame-Options block), fall back to redirect
+    iframe.onerror = function () { window.location.href = url; };
+    iframe.src = url;
+
+    // Also detect blank iframe after timeout (onerror doesn't always fire)
+    setTimeout(() => {
+      try {
+        // Accessing cross-origin iframe throws — that's fine, means it loaded
+        iframe.contentWindow.document;
+        // If we can access it and it's blank, the site blocked framing
+        if (!iframe.contentWindow.document.body.innerHTML) {
+          closeCheckoutModal();
+          window.location.href = url;
+        }
+      } catch (e) {
+        // Cross-origin = iframe loaded the external page — all good
+      }
+    }, 3000);
+  }
+
+  function closeCheckoutModal() {
+    const modal = document.getElementById('checkout-modal');
+    const iframe = document.getElementById('checkout-iframe');
+    if (modal) modal.hidden = true;
+    if (iframe) iframe.src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Close modal on backdrop click or close button
+  var modalBackdrop = document.querySelector('.checkout-modal-backdrop');
+  var modalClose = document.querySelector('.checkout-modal-close');
+  if (modalBackdrop) modalBackdrop.addEventListener('click', closeCheckoutModal);
+  if (modalClose) modalClose.addEventListener('click', closeCheckoutModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeCheckoutModal();
+  });
+
   const form = document.getElementById('checkout-form');
   if (form) {
     form.addEventListener('submit', (e) => {
@@ -331,14 +383,12 @@ function initCheckout() {
 
       const selectedTier = form.querySelector('input[name="ticket_tier"]:checked');
       const tier = selectedTier ? selectedTier.value : 'early_bird';
-      const price = selectedTier ? Number(selectedTier.dataset.price) : 1999;
-      const totalAmount = price * currentQty;
 
-      // Placeholder redirect — replace with real Paymongo link
-      const payURL = `https://example.com/pay?tier=${encodeURIComponent(tier)}&qty=${currentQty}&amount=${totalAmount}`;
+      const payURL = checkoutLinks[tier] || checkoutLinks.early_bird;
 
       setTimeout(() => {
-        window.location.href = payURL;
+        openCheckoutModal(payURL);
+        submitBtn.disabled = false;
       }, 500);
     });
   }
