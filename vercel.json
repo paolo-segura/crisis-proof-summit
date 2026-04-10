@@ -7,7 +7,8 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/the-new-business-normal", "destination": "/index.html" },
     { "source": "/thank-you", "destination": "/thank-you.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" }
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/participant-details", "destination": "/participant-details.html" }
   ],
   "headers": [
     {
