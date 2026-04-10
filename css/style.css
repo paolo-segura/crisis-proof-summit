@@ -338,6 +338,12 @@ body.nav-open {
   display: block;
   background: var(--bg-primary);
 }
+.hero-poster-video {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  aspect-ratio: 1080 / 1350;
+}
 .hero-glow {
   position: absolute;
   top: 50%;

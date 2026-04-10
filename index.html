@@ -60,17 +60,18 @@
   <!-- ========== HERO — EVENT POSTER ========== -->
   <header id="hero" class="section-dark">
     <div class="hero-poster-wrapper">
-      <picture>
-        <source srcset="/assets/images/event-poster-final.webp" type="image/webp" />
-        <img
-          src="/assets/images/event-poster-final.jpg"
-          alt="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999."
-          class="hero-poster"
-          width="1080"
-          height="1350"
-          fetchpriority="high"
-          decoding="async" />
-      </picture>
+      <video
+        class="hero-poster hero-poster-video"
+        autoplay muted loop playsinline webkit-playsinline disablepictureinpicture
+        preload="auto"
+        poster="/assets/images/event-poster-final.jpg"
+        width="1080"
+        height="1350"
+        aria-label="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999.">
+        <source src="/assets/event-poster-final.webm" type="video/webm" />
+        <source src="/assets/event-poster-final.mp4" type="video/mp4" />
+        <img src="/assets/images/event-poster-final.jpg" alt="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999." class="hero-poster" />
+      </video>
       <div class="hero-glow"></div>
     </div>
 

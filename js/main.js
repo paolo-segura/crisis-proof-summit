@@ -497,32 +497,37 @@ function initCheckout() {
   });
 }
 
-// --- 7. Safari/mobile autoplay fix for background video ---
+// --- 7. Safari/mobile autoplay fix for background video + hero video ---
 
 function initBgVideo() {
-  const vid = document.querySelector('.bg-video-fixed');
-  if (!vid) return;
+  const vids = document.querySelectorAll('.bg-video-fixed, .hero-poster-video');
+  if (!vids.length) return;
 
-  function tryPlay() {
-    var p = vid.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(function () {
-        // Autoplay blocked — try again on first user interaction
-        var events = ['touchstart', 'click', 'scroll'];
-        function playOnInteraction() {
-          vid.play();
+  function tryPlayAll() {
+    vids.forEach(function (vid) {
+      // Ensure attributes are set (some Safari versions ignore HTML attrs)
+      vid.muted = true;
+      vid.playsInline = true;
+      var p = vid.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(function () {
+          // Autoplay blocked — try again on first user interaction
+          var events = ['touchstart', 'click', 'scroll'];
+          function playOnInteraction() {
+            vids.forEach(function (v) { v.play(); });
+            events.forEach(function (e) {
+              document.removeEventListener(e, playOnInteraction);
+            });
+          }
           events.forEach(function (e) {
-            document.removeEventListener(e, playOnInteraction);
+            document.addEventListener(e, playOnInteraction, { once: true, passive: true });
           });
-        }
-        events.forEach(function (e) {
-          document.addEventListener(e, playOnInteraction, { once: true, passive: true });
         });
-      });
-    }
+      }
+    });
   }
 
   // Try immediately, and again after load in case Safari deferred it
-  tryPlay();
-  window.addEventListener('load', tryPlay);
+  tryPlayAll();
+  window.addEventListener('load', tryPlayAll);
 }
