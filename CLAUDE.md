@@ -5,7 +5,7 @@ One-page sales/checkout site for the Crisis-Proof Business Summit event. Include
 
 ## Event Details
 - **Event:** Crisis-Proof Business Summit
-- **Date:** May 10, 2026 (Sunday), 9AM-6PM (PHT / UTC+8)
+- **Date:** May 9, 2026 (Saturday), 9AM-6PM (PHT / UTC+8)
 - **Venue:** Philippine Trade Training Center - Global MSME Academy, Sen. Gil J. Puyat Ave, Pasay, Metro Manila
 - **Organizers:** Exponential University + Gencys Group
 - **Capacity:** 1,500 pax
@@ -23,7 +23,7 @@ One-page sales/checkout site for the Crisis-Proof Business Summit event. Include
 - Dark navy-black background (#0a0e1a)
 - Gold accents (#d4a542) for primary highlights
 - Teal accents (#3bb5c4) for secondary highlights
-- Match the event poster in `../crisis-proof-sales-page/event-poster.png`
+- Match the event poster in `../crisis-proof-sales-page/event-poster-no-qr-new-2.png`
 
 ## UTM Sources (12)
 pancake, abundance, rtd, rdr, infotxt, gencys, prime, expou, lumina, bamboo, univoice, aiu
@@ -52,5 +52,5 @@ vercel.json         — Vercel config
 
 ## Source Materials
 - Event brief: `../crisis-proof-sales-page/Event Brief_ Crisis-Proof Summit.pdf`
-- Event poster: `../crisis-proof-sales-page/event-poster.png`
+- Event poster: `../crisis-proof-sales-page/event-poster-no-qr-new-2.png`
 - Rates image: `../crisis-proof-sales-page/rates-and-inclusions.jpg`

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- 1. Countdown Timer ---
 
 function initCountdown() {
-  const targetDate = new Date('2026-05-10T09:00:00+08:00');
+  const targetDate = new Date('2026-05-09T09:00:00+08:00');
 
   const timers = [
     document.getElementById('countdown'),
