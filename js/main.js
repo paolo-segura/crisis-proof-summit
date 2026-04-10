@@ -388,19 +388,44 @@ function initCheckout() {
     });
   });
 
-  // Checkout links → open in new tab
+  // Checkout links → open in iframe modal
   const checkoutLinks = {
     early_bird: 'https://scaleyourorg.net/checkout/PROD-1775779034209',
     regular: 'https://scaleyourorg.net/checkout/PROD-1775779096693',
     vip: 'https://scaleyourorg.net/checkout/PROD-1775779147241'
   };
 
+  function openCheckoutModal(url) {
+    var modal = document.getElementById('checkout-modal');
+    var iframe = document.getElementById('checkout-iframe');
+    if (!modal || !iframe) { window.open(url, '_blank', 'noopener,noreferrer'); return; }
+    iframe.src = url;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCheckoutModal() {
+    var modal = document.getElementById('checkout-modal');
+    var iframe = document.getElementById('checkout-iframe');
+    if (modal) modal.hidden = true;
+    if (iframe) iframe.src = '';
+    document.body.style.overflow = '';
+  }
+
+  var modalBackdrop = document.querySelector('.checkout-modal-backdrop');
+  var modalClose = document.querySelector('.checkout-modal-close');
+  if (modalBackdrop) modalBackdrop.addEventListener('click', closeCheckoutModal);
+  if (modalClose) modalClose.addEventListener('click', closeCheckoutModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeCheckoutModal();
+  });
+
   document.querySelectorAll('.ticket-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.preventDefault();
       var tier = btn.dataset.tier || 'early_bird';
       var payURL = checkoutLinks[tier] || checkoutLinks.early_bird;
-      window.open(payURL, '_blank', 'noopener,noreferrer');
+      openCheckoutModal(payURL);
     });
   });
 }
