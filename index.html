@@ -42,7 +42,7 @@
         <li><a href="#details" class="nav-link">Details</a></li>
         <li><a href="#pricing" class="nav-link">Pricing</a></li>
         <li><a href="#faq" class="nav-link">FAQ</a></li>
-        <li><a href="#checkout" class="nav-link nav-cta">Reserve Now</a></li>
+        <li><a href="#pricing" class="nav-link nav-cta">Reserve Now</a></li>
       </ul>
 
       <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
@@ -286,9 +286,9 @@
               <li>Networking opportunities</li>
               <li>The New Normal Blueprint workbook</li>
             </ul>
-            <a href="#checkout" class="btn btn-secondary ticket-btn" data-tier="early_bird" data-price="1999">
-              Select Early Bird
-            </a>
+            <button class="btn btn-secondary ticket-btn" data-tier="early_bird">
+              Reserve Now
+            </button>
           </article>
 
           <!-- Regular -->
@@ -301,9 +301,9 @@
               <li>Networking opportunities</li>
               <li>The New Normal Blueprint workbook</li>
             </ul>
-            <a href="#checkout" class="btn btn-secondary ticket-btn" data-tier="regular" data-price="2500">
-              Select Regular
-            </a>
+            <button class="btn btn-secondary ticket-btn" data-tier="regular">
+              Reserve Now
+            </button>
           </article>
 
           <!-- VIP -->
@@ -319,118 +319,10 @@
               <li class="vip-perk">VIP Q&amp;A with Speakers (2 questions)</li>
               <li class="vip-perk">Exclusive Mastermind Session (Gencys Coaches)</li>
             </ul>
-            <a href="#checkout" class="btn btn-primary ticket-btn" data-tier="vip" data-price="5000">
-              Select VIP Access
-            </a>
+            <button class="btn btn-primary ticket-btn" data-tier="vip">
+              Get VIP Access
+            </button>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========== ONE-PAGE CHECKOUT ========== -->
-    <section id="checkout" class="animate-in section-dark">
-      <div class="container">
-        <div class="checkout-wrapper">
-
-          <!-- Left: Order Summary -->
-          <div class="checkout-summary">
-            <h2 class="checkout-heading">Order Summary</h2>
-            <div class="checkout-event-info checkout-event-info--poster">
-              <img src="assets/images/event-poster-no-qr.png" alt="THE NEW BUSINESS NORMAL" class="checkout-poster" />
-            </div>
-
-            <div class="checkout-tier-display">
-              <div class="checkout-tier-row">
-                <span class="checkout-tier-label">Ticket</span>
-                <span class="checkout-tier-value" id="checkout-tier-name">Early Bird</span>
-              </div>
-              <div class="checkout-tier-row">
-                <span class="checkout-tier-label">Qty</span>
-                <span class="checkout-tier-value">
-                  <div class="qty-stepper">
-                    <button type="button" class="qty-btn" id="qty-minus" aria-label="Decrease quantity">&minus;</button>
-                    <span class="qty-value" id="checkout-qty">1</span>
-                    <button type="button" class="qty-btn" id="qty-plus" aria-label="Increase quantity">+</button>
-                  </div>
-                </span>
-              </div>
-              <div class="checkout-tier-row checkout-total-row">
-                <span class="checkout-tier-label">Total</span>
-                <span class="checkout-tier-value checkout-total" id="checkout-total">&#8369;1,999</span>
-              </div>
-            </div>
-
-            <ul class="checkout-includes">
-              <li id="checkout-include-1">Full-day access (9AM-6PM)</li>
-              <li id="checkout-include-2">Event kit &amp; materials</li>
-              <li id="checkout-include-3">The New Normal Blueprint</li>
-              <li id="checkout-include-4">Networking opportunities</li>
-            </ul>
-
-            <div class="checkout-trust">
-              <span>&#128274; Secure Checkout</span>
-              <span>&#9889; Instant Confirmation</span>
-            </div>
-          </div>
-
-          <!-- Right: Checkout Form -->
-          <div class="checkout-form-wrapper">
-            <h2 class="checkout-heading">Secure Your Seat</h2>
-            <p class="checkout-form-sub">Complete the form below. It only takes a minute.</p>
-
-            <form id="checkout-form" class="checkout-form" novalidate>
-              <div class="form-group">
-                <label for="full-name" class="form-label">Full Name</label>
-                <input type="text" id="full-name" name="full_name" class="form-input" placeholder="Juan Dela Cruz" required autocomplete="name" />
-              </div>
-              <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
-                <input type="email" id="email" name="email" class="form-input" placeholder="juan@example.com" required autocomplete="email" />
-              </div>
-              <div class="form-group">
-                <label for="phone" class="form-label">Phone Number</label>
-                <input type="tel" id="phone" name="phone" class="form-input" placeholder="09XX XXX XXXX" required autocomplete="tel" />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Selected Ticket</label>
-                <div class="form-tier-selector">
-                  <label class="tier-radio">
-                    <input type="radio" name="ticket_tier" value="early_bird" data-price="1999" checked />
-                    <span class="tier-radio-box">
-                      <span class="tier-radio-name">Early Bird</span>
-                      <span class="tier-radio-price">&#8369;1,999</span>
-                    </span>
-                  </label>
-                  <label class="tier-radio">
-                    <input type="radio" name="ticket_tier" value="regular" data-price="2500" />
-                    <span class="tier-radio-box">
-                      <span class="tier-radio-name">Regular</span>
-                      <span class="tier-radio-price">&#8369;2,500</span>
-                    </span>
-                  </label>
-                  <label class="tier-radio">
-                    <input type="radio" name="ticket_tier" value="vip" data-price="5000" />
-                    <span class="tier-radio-box">
-                      <span class="tier-radio-name">VIP</span>
-                      <span class="tier-radio-price">&#8369;5,000</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <input type="hidden" name="ticket_qty" id="ticket-qty-input" value="1" />
-              <button type="submit" class="btn btn-primary btn-checkout" id="checkout-submit">
-                <span class="btn-checkout-text">Complete Order &mdash; <span id="btn-price">&#8369;1,999</span></span>
-                <svg class="btn-arrow-right" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M3 10H17M17 10L11 4M17 10L11 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-
-              <p class="checkout-secure-note">&#128274; 100% Secure &amp; Safe Payment via Paymongo</p>
-            </form>
-          </div>
-
         </div>
       </div>
     </section>
@@ -538,7 +430,7 @@
             <div class="countdown-unit"><span class="countdown-value" data-unit="seconds">--</span><span class="countdown-label">Seconds</span></div>
           </div>
         </div>
-        <a href="#checkout" class="btn btn-primary btn-large">Claim Your Seat Now</a>
+        <a href="#pricing" class="btn btn-primary btn-large">Claim Your Seat Now</a>
       </div>
     </section>
 

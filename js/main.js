@@ -372,26 +372,15 @@ function initCheckout() {
     if (e.key === 'Escape') closeCheckoutModal();
   });
 
-  const form = document.getElementById('checkout-form');
-  if (form) {
-    form.addEventListener('submit', (e) => {
+  // Pricing card buttons → open checkout modal
+  document.querySelectorAll('.ticket-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
       e.preventDefault();
-
-      const submitBtn = document.getElementById('checkout-submit');
-      if (submitBtn.disabled) return;
-      submitBtn.disabled = true;
-
-      const selectedTier = form.querySelector('input[name="ticket_tier"]:checked');
-      const tier = selectedTier ? selectedTier.value : 'early_bird';
-
-      const payURL = checkoutLinks[tier] || checkoutLinks.early_bird;
-
-      setTimeout(() => {
-        openCheckoutModal(payURL);
-        submitBtn.disabled = false;
-      }, 500);
+      var tier = btn.dataset.tier || 'early_bird';
+      var payURL = checkoutLinks[tier] || checkoutLinks.early_bird;
+      openCheckoutModal(payURL);
     });
-  }
+  });
 }
 
 // --- 7. Safari/mobile autoplay fix for background video ---
