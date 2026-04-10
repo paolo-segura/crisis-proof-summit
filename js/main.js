@@ -355,40 +355,9 @@ function initCheckout() {
     });
   });
 
-  // Pricing card buttons → select tier + scroll to checkout
-  const ticketBtns = document.querySelectorAll('.ticket-btn');
-  ticketBtns.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      // Don't prevent default — let smooth scroll handle it
-      const tier = btn.dataset.tier;
-      const price = btn.dataset.price;
-
-      // Select matching radio
-      const radio = document.querySelector(`input[name="ticket_tier"][value="${tier}"]`);
-      if (radio) {
-        radio.checked = true;
-        updateCheckoutDisplay(tier, price);
-      }
-
-      // Log to Supabase if available
-      if (typeof supabase !== 'undefined' && supabase) {
-        const utm = typeof getUTMParams === 'function' ? getUTMParams() : {};
-        const sessionId = typeof getSessionId === 'function' ? getSessionId() : null;
-
-        supabase.from('clicks').insert({
-          utm_source: utm.utm_source || null,
-          utm_medium: utm.utm_medium || null,
-          utm_campaign: utm.utm_campaign || null,
-          ticket_tier: tier,
-          session_id: sessionId,
-        }).then(({ error }) => {
-          if (error) console.warn('Click log failed:', error.message);
-        });
-      }
-    });
-  });
-
   // Checkout links → log click + open in iframe modal
+  // (Legacy in-page checkout form handler removed — form elements it
+  // targeted no longer exist; the handler below is the source of truth.)
   const checkoutLinks = {
     early_bird: 'https://scaleyourorg.net/checkout/PROD-1775779034209',
     regular: 'https://scaleyourorg.net/checkout/PROD-1775779096693',
@@ -431,10 +400,45 @@ function initCheckout() {
       });
   }
 
+  // Iframe-first checkout with a slow-load safety net: if the iframe doesn't
+  // fire a `load` event within 8s (3rd-party storage partitioning, extensions,
+  // flaky network), surface a "open in new tab" fallback button inside the
+  // same modal so the user still has a path forward without losing the
+  // Done-Paying handoff that drops them back on /thank-you.
+  var checkoutLoadTimer = null;
+
   function openCheckoutModal(url) {
     var modal = document.getElementById('checkout-modal');
     var iframe = document.getElementById('checkout-iframe');
+    var loading = document.getElementById('checkout-modal-loading');
+    var fallback = document.getElementById('checkout-fallback');
+    var fallbackLink = document.getElementById('checkout-fallback-link');
+
+    // Absolute fallback if the modal markup isn't there at all
     if (!modal || !iframe) { window.open(url, '_blank', 'noopener,noreferrer'); return; }
+
+    // Reset state every open
+    if (fallback) fallback.hidden = true;
+    if (loading) loading.style.display = '';
+    if (fallbackLink) fallbackLink.href = url;
+
+    // Hide loading overlay and cancel the slow-load timer when the iframe
+    // actually fires `load`. One-shot listener so it doesn't leak.
+    var onLoad = function () {
+      if (loading) loading.style.display = 'none';
+      if (checkoutLoadTimer) { clearTimeout(checkoutLoadTimer); checkoutLoadTimer = null; }
+      iframe.removeEventListener('load', onLoad);
+    };
+    iframe.addEventListener('load', onLoad);
+
+    // 8s slow-load watchdog: if no load fires, show the new-tab fallback.
+    // The iframe stays in place — we don't navigate away from the modal.
+    if (checkoutLoadTimer) clearTimeout(checkoutLoadTimer);
+    checkoutLoadTimer = setTimeout(function () {
+      if (fallback) fallback.hidden = false;
+      if (loading) loading.style.display = 'none';
+    }, 8000);
+
     iframe.src = url;
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -443,8 +447,11 @@ function initCheckout() {
   function closeCheckoutModal() {
     var modal = document.getElementById('checkout-modal');
     var iframe = document.getElementById('checkout-iframe');
+    var fallback = document.getElementById('checkout-fallback');
     if (modal) modal.hidden = true;
     if (iframe) iframe.src = '';
+    if (fallback) fallback.hidden = true;
+    if (checkoutLoadTimer) { clearTimeout(checkoutLoadTimer); checkoutLoadTimer = null; }
     document.body.style.overflow = '';
   }
 

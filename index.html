@@ -9,18 +9,18 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="THE NEW BUSINESS NORMAL — May 9, 2026 | PTTC Manila" />
   <meta property="og:description" content="Build a Crisis-Proof Business Before It's Too Late. The businesses that thrive don't wait for normal to return — they build the new normal. Join 1,500 entrepreneurs." />
-  <meta property="og:image" content="/assets/images/event-poster-new-kcl.jpg" />
+  <meta property="og:image" content="/assets/images/event-poster-final.jpg" />
   <meta property="og:image:width" content="1080" />
   <meta property="og:image:height" content="1350" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="/assets/images/event-poster-new-kcl.jpg" />
+  <meta name="twitter:image" content="/assets/images/event-poster-final.jpg" />
 
   <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,900&family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/css/style.css" />
 
@@ -60,16 +60,17 @@
   <!-- ========== HERO — EVENT POSTER ========== -->
   <header id="hero" class="section-dark">
     <div class="hero-poster-wrapper">
-      <video
-        class="hero-poster hero-poster-video"
-        autoplay muted loop playsinline webkit-playsinline
-        preload="metadata"
-        poster="/assets/images/event-poster-new-kcl.jpg"
-        aria-label="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999.">
-        <source src="/assets/event-poster-new-kcl.webm" type="video/webm" />
-        <source src="/assets/event-poster-new-kcl.mp4" type="video/mp4" />
-        <img src="/assets/images/event-poster-new-kcl.jpg" alt="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999." class="hero-poster" />
-      </video>
+      <picture>
+        <source srcset="/assets/images/event-poster-final.webp" type="image/webp" />
+        <img
+          src="/assets/images/event-poster-final.jpg"
+          alt="THE NEW BUSINESS NORMAL — Build a Crisis-Proof Business Before It's Too Late. May 9, 2026, PTTC Manila. Early Bird P1,999."
+          class="hero-poster"
+          width="1080"
+          height="1350"
+          fetchpriority="high"
+          decoding="async" />
+      </picture>
       <div class="hero-glow"></div>
     </div>
 
@@ -323,7 +324,7 @@
           <article class="pricing-card featured" aria-label="VIP ticket — best value">
             <div class="pricing-badge badge-vip">THE UNFAIR ADVANTAGE</div>
             <p class="pricing-label">VIP ACCESS</p>
-            <div class="pricing-price"><span class="price-currency">&#8369;</span>5,000</div>
+            <div class="pricing-price"><span class="price-current"><span class="price-currency">&#8369;</span>5,000</span></div>
             <ul class="pricing-features">
               <li>Everything in Full Access, PLUS:</li>
               <li class="vip-perk">VIP Registration Lane (Express Check-in)</li>
@@ -465,13 +466,29 @@
     </div>
   </footer>
 
-  <!-- Checkout Modal -->
+  <!-- Checkout Modal (iframe-first with slow-load fallback) -->
   <div id="checkout-modal" class="checkout-modal" hidden>
     <div class="checkout-modal-backdrop"></div>
     <div class="checkout-modal-container">
       <button class="checkout-modal-close" aria-label="Close checkout">&times;</button>
-      <div class="checkout-modal-loading">Loading checkout&hellip;</div>
-      <iframe id="checkout-iframe" class="checkout-modal-iframe" title="Checkout"></iframe>
+      <div class="checkout-modal-loading" id="checkout-modal-loading">
+        <div class="checkout-loading-spinner" aria-hidden="true"></div>
+        <p class="checkout-loading-text">Loading secure checkout&hellip;</p>
+      </div>
+      <iframe
+        id="checkout-iframe"
+        class="checkout-modal-iframe"
+        title="Checkout"
+        allow="payment *; clipboard-write *"
+        referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="checkout-modal-fallback" id="checkout-fallback" hidden>
+        <p class="fallback-title">Checkout taking a while?</p>
+        <p class="fallback-text">Some browsers block embedded payment pages. Open it in a new tab instead &mdash; then come back and click <strong>Done Paying</strong> below.</p>
+        <a id="checkout-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="checkout-fallback-btn">
+          Open Payment Page in New Tab
+          <span aria-hidden="true">&#8599;</span>
+        </a>
+      </div>
       <div class="checkout-modal-handoff">
         <button type="button" id="checkout-done-btn" class="checkout-done-btn">
           <span class="done-check">&#10003;</span>
