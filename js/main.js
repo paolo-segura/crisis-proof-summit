@@ -12,27 +12,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- 1. Countdown Timer ---
+// Hero countdown targets Early Bird deadline (May 2), then auto-switches
+// to the event countdown (May 9) once early bird ends. Bottom countdown
+// always targets the event date.
 
 function initCountdown() {
-  const targetDate = new Date('2026-05-09T09:00:00+08:00');
+  const eventDate = new Date('2026-05-09T09:00:00+08:00');
+  const earlyBirdEnd = new Date('2026-05-02T00:00:00+08:00');
 
-  const timers = [
-    document.getElementById('countdown'),
-    document.getElementById('countdown-bottom'),
-  ].filter(Boolean);
+  const heroTimer = document.getElementById('countdown');
+  const bottomTimer = document.getElementById('countdown-bottom');
+  const heroLabel = document.getElementById('hero-countdown-label');
 
-  if (timers.length === 0) return;
+  if (!heroTimer && !bottomTimer) return;
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
-  function updateTimers() {
-    const now = new Date();
-    const diff = targetDate - now;
+  function renderTimer(timer, target, endedMsg) {
+    if (!timer) return;
+    const diff = target - new Date();
 
     if (diff <= 0) {
-      timers.forEach((timer) => {
-        timer.innerHTML = '<span class="countdown-message">EVENT DAY IS HERE!</span>';
-      });
+      timer.innerHTML = '<span class="countdown-message">' + endedMsg + '</span>';
       return;
     }
 
@@ -42,20 +43,36 @@ function initCountdown() {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
-    timers.forEach((timer) => {
-      const d = timer.querySelector('[data-unit="days"]');
-      const h = timer.querySelector('[data-unit="hours"]');
-      const m = timer.querySelector('[data-unit="minutes"]');
-      const s = timer.querySelector('[data-unit="seconds"]');
-      if (d) d.textContent = pad(days);
-      if (h) h.textContent = pad(hours);
-      if (m) m.textContent = pad(minutes);
-      if (s) s.textContent = pad(seconds);
-    });
+    const d = timer.querySelector('[data-unit="days"]');
+    const h = timer.querySelector('[data-unit="hours"]');
+    const m = timer.querySelector('[data-unit="minutes"]');
+    const s = timer.querySelector('[data-unit="seconds"]');
+    if (d) d.textContent = pad(days);
+    if (h) h.textContent = pad(hours);
+    if (m) m.textContent = pad(minutes);
+    if (s) s.textContent = pad(seconds);
   }
 
-  updateTimers();
-  setInterval(updateTimers, 1000);
+  function tick() {
+    const now = new Date();
+
+    if (heroTimer) {
+      if (now < earlyBirdEnd) {
+        if (heroLabel) heroLabel.innerHTML = 'Early Bird &#8369;1,999 ends in';
+        renderTimer(heroTimer, earlyBirdEnd, 'EARLY BIRD ENDED');
+      } else {
+        if (heroLabel) heroLabel.textContent = 'Event starts in';
+        renderTimer(heroTimer, eventDate, 'EVENT DAY IS HERE!');
+      }
+    }
+
+    if (bottomTimer) {
+      renderTimer(bottomTimer, eventDate, 'EVENT DAY IS HERE!');
+    }
+  }
+
+  tick();
+  setInterval(tick, 1000);
 }
 
 // --- 1b. Early Bird → Regular auto-switch ---
