@@ -329,12 +329,10 @@ body.nav-open {
   z-index: 1;
   max-width: 620px;
   width: 100%;
-  margin-bottom: 1.1rem;
-  max-height: 48vh;
+  margin-bottom: 1rem;
 }
 .hero-poster {
   width: 100%;
-  height: 100%;
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 80px var(--gold-glow), 0 0 0 1px var(--border);
   overflow: hidden;
@@ -343,9 +341,8 @@ body.nav-open {
 }
 .hero-poster-video {
   width: 100%;
-  height: 100%;
-  max-height: 48vh;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   aspect-ratio: 1080 / 1350;
 }
 .hero-glow {
@@ -362,9 +359,9 @@ body.nav-open {
 .hero-bottom { max-width: 620px; width: 100%; position: relative; z-index: 1; }
 .btn-hero {
   width: 100%;
-  font-size: 1.05rem;
-  padding: 1.15rem 2rem;
-  margin-top: 1rem;
+  font-size: 1rem;
+  padding: 1rem 2rem;
+  margin-top: 0.65rem;
 }
 
 /* ==============================
@@ -606,44 +603,49 @@ body.nav-open {
   padding-top: 2px;
 }
 
-/* Hero variant — fills the hero-bottom width (matches poster width) */
+/* Hero variant — full width of the poster, compact vertical height */
 .hero-eb {
   max-width: 100%;
   width: 100%;
   margin: 0 auto 0.25rem;
-  padding: 0.9rem 0.6rem 0.85rem;
+  padding: 0.55rem 0.6rem 0.55rem;
 }
 .hero-eb .eb-countdown-label {
-  font-size: 0.9rem;
-  letter-spacing: 1.8px;
-  margin-bottom: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 1.2px;
+  margin-bottom: 0.35rem;
 }
 .hero-eb .eb-countdown-timer {
   gap: 0.15rem;
   justify-content: space-between;
+  align-items: center;
   padding: 0 0.25rem;
 }
 .hero-eb .eb-countdown-unit {
   min-width: 0;
   flex: 1 1 0;
 }
-.hero-eb .eb-countdown-value { font-size: 3rem; }
+.hero-eb .eb-countdown-value {
+  font-size: 1.85rem;
+  line-height: 1;
+}
 .hero-eb .eb-countdown-sublabel {
-  font-size: 0.65rem;
-  letter-spacing: 1px;
-  margin-top: 3px;
+  font-size: 0.55rem;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 .hero-eb .eb-countdown-sep {
-  font-size: 2rem;
+  font-size: 1.3rem;
   padding-top: 0;
   color: var(--gold);
   opacity: 0.45;
 }
 @media (min-width: 768px) {
   .hero-eb { padding: 1.1rem 0.9rem 1rem; }
-  .hero-eb .eb-countdown-label { font-size: 1.05rem; letter-spacing: 2.5px; }
+  .hero-eb .eb-countdown-label { font-size: 1.05rem; letter-spacing: 2.5px; margin-bottom: 0.6rem; }
   .hero-eb .eb-countdown-value { font-size: 3.6rem; }
   .hero-eb .eb-countdown-sep { font-size: 2.6rem; }
+  .hero-eb .eb-countdown-sublabel { font-size: 0.65rem; }
 }
 @media (min-width: 1024px) {
   .hero-eb .eb-countdown-value { font-size: 4rem; }
@@ -894,8 +896,7 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid var(--border); position: re
   .organizers-grid { grid-template-columns: repeat(2, 1fr); }
   .testimonials-grid { grid-template-columns: repeat(3, 1fr); }
   .checkout-wrapper { grid-template-columns: 1fr 1fr; }
-  .hero-poster-wrapper { max-width: 560px; max-height: 55vh; }
-  .hero-poster-video { max-height: 55vh; }
+  .hero-poster-wrapper { max-width: 560px; }
   .hero-bottom { max-width: 560px; }
   .countdown-value { font-size: 2.2rem; }
   .countdown-unit { min-width: 64px; padding: 0.75rem 1rem; }
@@ -917,8 +918,7 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid var(--border); position: re
   .pricing-grid-2col { grid-template-columns: repeat(2, 1fr); max-width: 820px; margin-left: auto; margin-right: auto; }
   .pricing-card.featured { transform: scale(1.05); }
   .pricing-card.featured:hover { transform: scale(1.05) translateY(-4px); }
-  .hero-poster-wrapper { max-width: 650px; max-height: 62vh; }
-  .hero-poster-video { max-height: 62vh; }
+  .hero-poster-wrapper { max-width: 650px; }
   .hero-bottom { max-width: 650px; }
   .countdown-value { font-size: 2.8rem; }
   .final-cta-heading { font-size: 2.5rem; }
