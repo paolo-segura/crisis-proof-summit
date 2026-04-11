@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sponsor THE NEW BUSINESS NORMAL — May 9, 2026. Put your brand in front of 1,500 Filipino entrepreneurs actively looking for tools, services, and partners to build a crisis-proof business." />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sponsor THE NEW BUSINESS NORMAL | May 9, 2026 | PTTC Manila" />
+  <meta property="og:description" content="1,500 Filipino entrepreneurs. 1 day. 6 partner channels. Put your brand in the room where the new normal gets built." />
+  <meta property="og:image" content="/assets/images/event-poster-final.jpg" />
+  <meta property="og:image:width" content="1080" />
+  <meta property="og:image:height" content="1350" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="/assets/images/event-poster-final.jpg" />
+
+  <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <title>Sponsor THE NEW BUSINESS NORMAL | May 9, 2026 | PTTC Manila</title>
+
+  <style>
+    /* ==========================================================
+       Sponsor-page-only overrides — reuse existing design tokens
+       ========================================================== */
+    .sponsor-hero {
+      padding: 9rem 1.5rem 4rem;
+      text-align: center;
+    }
+    .sponsor-hero .eyebrow {
+      display: inline-block;
+      font-family: var(--font-subhead);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 1rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--teal);
+      border-radius: 999px;
+    }
+    .sponsor-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      line-height: 0.95;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--white);
+      margin-bottom: 1.25rem;
+      max-width: 950px;
+      margin-left: auto;
+      margin-right: auto;
+      text-wrap: balance;
+    }
+    .sponsor-hero h1 .hero-line { display: block; }
+    .sponsor-hero h1 .gold { color: var(--gold); }
+    .sponsor-hero .sponsor-sub {
+      max-width: 720px;
+      margin: 0 auto 2rem;
+      font-size: 1.1rem;
+      line-height: 1.55;
+      color: var(--gray-300);
+    }
+    .sponsor-hero .sponsor-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem 2.5rem;
+      font-family: var(--font-subhead);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-size: 0.85rem;
+      color: var(--gold-cream);
+      margin-bottom: 2.5rem;
+    }
+    .sponsor-hero .sponsor-meta span::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      margin-right: 0.6rem;
+      vertical-align: middle;
+    }
+
+    /* Stat row */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 900px;
+      margin: 0 auto 2rem;
+    }
+    @media (min-width: 768px) {
+      .stat-row { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1rem;
+      text-align: center;
+    }
+    .stat-box .stat-num {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+    .stat-box .stat-label {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--gray-300);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Why sponsor grid */
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (min-width: 768px) {
+      .why-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .why-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+    .why-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold);
+      background: var(--bg-card-hover);
+    }
+    .why-card .why-icon {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: var(--teal);
+      line-height: 1;
+      margin-bottom: 0.75rem;
+    }
+    .why-card h3 {
+      font-family: var(--font-subhead);
+      font-size: 1.15rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--white);
+      margin-bottom: 0.6rem;
+    }
+    .why-card p {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: var(--gray-300);
+    }
+
+    /* Audience section */
+    .audience-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: center;
+    }
+    @media (min-width: 900px) {
+      .audience-grid { grid-template-columns: 1fr 1fr; gap: 3rem; }
+    }
+    .audience-grid h3 {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 1rem;
+      color: var(--white);
+    }
+    .audience-grid p {
+      color: var(--gray-300);
+      font-size: 1rem;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .audience-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .audience-list li {
+      position: relative;
+      padding-left: 1.75rem;
+      margin-bottom: 0.85rem;
+      color: var(--cream);
+      line-height: 1.5;
+    }
+    .audience-list li::before {
+      content: '\2192';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 1.2rem;
+      top: -2px;
+    }
+
+    /* Sponsor tier cards — extends .pricing-card */
+    .sponsor-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (min-width: 900px) {
+      .sponsor-grid { grid-template-columns: repeat(3, 1fr); gap: 1.75rem; }
+    }
+    .sponsor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .sponsor-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--gold);
+    }
+    .sponsor-card.featured {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 40px var(--gold-glow);
+    }
+    .sponsor-card .sponsor-badge {
+      display: inline-block;
+      align-self: flex-start;
+      font-family: var(--font-subhead);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(77, 212, 200, 0.12);
+      color: var(--teal);
+      border: 1px solid var(--teal);
+      margin-bottom: 1rem;
+    }
+    .sponsor-card.featured .sponsor-badge {
+      background: rgba(243, 186, 91, 0.15);
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+    .sponsor-card .sponsor-tier-name {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .sponsor-card .sponsor-price {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .sponsor-card .sponsor-price-sub {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+    }
+    .sponsor-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.75rem;
+      flex: 1;
+    }
+    .sponsor-features li {
+      position: relative;
+      padding-left: 1.75rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--cream);
+    }
+    .sponsor-features li::before {
+      content: '\2713';
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--teal);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .sponsor-card.featured .sponsor-features li::before {
+      color: var(--gold);
+    }
+
+    /* Contact / final CTA */
+    .contact-cta {
+      text-align: center;
+      padding: 4rem 1.5rem 5rem;
+    }
+    .contact-cta h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      line-height: 1;
+      margin-bottom: 1rem;
+      color: var(--white);
+    }
+    .contact-cta h2 .gold { color: var(--gold); }
+    .contact-cta p {
+      max-width: 640px;
+      margin: 0 auto 2rem;
+      color: var(--gray-300);
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .contact-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .contact-card-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      max-width: 960px;
+      margin: 2rem auto 0;
+    }
+    @media (min-width: 700px) {
+      .contact-card-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    .contact-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+    .contact-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold);
+      background: var(--bg-card-hover);
+    }
+    .contact-card .contact-icon {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--teal);
+      line-height: 1;
+      margin-bottom: 0.65rem;
+    }
+    .contact-card .contact-label {
+      font-family: var(--font-subhead);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--gray-500);
+      margin-bottom: 0.4rem;
+    }
+    .contact-card .contact-value {
+      font-family: var(--font-body);
+      font-weight: 600;
+      color: var(--gold);
+      font-size: 1rem;
+      word-break: break-word;
+      margin-bottom: 0.85rem;
+    }
+    .contact-card .contact-btn {
+      display: inline-block;
+      font-family: var(--font-subhead);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      transition: background 0.2s ease, color 0.2s ease;
+      margin-top: auto;
+    }
+    .contact-card .contact-btn:hover {
+      background: var(--gold);
+      color: var(--bg-primary);
+    }
+
+    /* Urgency banner */
+    .urgency-banner {
+      background: linear-gradient(90deg, rgba(243,186,91,0.08), rgba(77,212,200,0.08));
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+    }
+    .urgency-banner p {
+      font-family: var(--font-subhead);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 0.9rem;
+      color: var(--gold-cream);
+    }
+    .urgency-banner .gold { color: var(--gold); }
+
+    /* Section spacing */
+    section.sponsor-section { padding: 4.5rem 1.5rem; }
+    section.sponsor-section .sponsor-section-heading {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      line-height: 1;
+      margin-bottom: 0.75rem;
+      color: var(--white);
+    }
+    section.sponsor-section .sponsor-section-sub {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+      max-width: 620px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== STICKY BACKGROUND VIDEO ========== -->
+  <video class="bg-video-fixed" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true">
+    <source src="/assets/hero-bg-web.mp4" type="video/mp4" />
+  </video>
+
+  <!-- ========== NAVIGATION ========== -->
+  <nav class="nav-bar" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="/the-new-business-normal" class="nav-logo" aria-label="Event home">
+        <img src="/assets/images/expou-logo.png" alt="Exponential University" class="logo-img" />
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#why" class="nav-link">Why Sponsor</a></li>
+        <li><a href="#audience" class="nav-link">Audience</a></li>
+        <li><a href="#tiers" class="nav-link">Tiers</a></li>
+        <li><a href="/the-new-business-normal" class="nav-link">Event Page</a></li>
+        <li><a href="#contact" class="nav-link nav-cta">Become a Sponsor</a></li>
+      </ul>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ========== HERO ========== -->
+    <header class="section-dark">
+      <div class="sponsor-hero">
+        <span class="eyebrow">Sponsorship Opportunities</span>
+        <h1>
+          <span class="hero-line">Put Your Brand In The Room</span>
+          <span class="hero-line">Where <span class="gold">The New Normal</span> Gets Built.</span>
+        </h1>
+        <p class="sponsor-sub">
+          On May 9, 2026, 1,500 Filipino business owners will spend 9 hours inside PTTC Manila learning how to survive fuel hikes, the peso's record low, and a consumer pullback &mdash; and actively shopping for the tools, services, and partners to do it. Be one of the brands they walk out remembering.
+        </p>
+        <div class="sponsor-meta">
+          <span>May 9, 2026</span>
+          <span>PTTC Manila</span>
+          <span>1,500 Pax</span>
+          <span>ExpoU &times; Gencys</span>
+        </div>
+
+        <!-- Stat row -->
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-num">1,500</div>
+            <div class="stat-label">On-Site Audience</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">6</div>
+            <div class="stat-label">Partner Channels</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">100K+</div>
+            <div class="stat-label">Combined Reach</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">9 Hrs</div>
+            <div class="stat-label">Direct Exposure</div>
+          </div>
+        </div>
+
+        <a href="#tiers" class="btn btn-primary btn-hero">See Sponsorship Tiers</a>
+      </div>
+    </header>
+
+    <!-- ========== URGENCY BANNER ========== -->
+    <div class="urgency-banner">
+      <p>Limited Sponsor Slots &mdash; <span class="gold">Gold Tier Cap: 3 Brands</span> &mdash; Locked On First Signed Agreement</p>
+    </div>
+
+    <!-- ========== WHY SPONSOR ========== -->
+    <section id="why" class="sponsor-section section-dark">
+      <div class="container">
+        <h2 class="sponsor-section-heading">Why This Audience. Why Now.</h2>
+        <p class="sponsor-section-sub">This isn't a generic expo crowd. Every attendee is a business owner actively making decisions to survive 2026.</p>
+
+        <div class="why-grid">
+          <div class="why-card">
+            <div class="why-icon">01</div>
+            <h3>Buying-Mode Audience</h3>
+            <p>Attendees pay &#8369;1,999&ndash;&#8369;5,000 to sit in this room. They're not browsing &mdash; they're actively hunting for tools, services, and operators that solve their pain.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">02</div>
+            <h3>Crisis-Context Relevance</h3>
+            <p>Diesel at &#8369;172, peso at a record low, Meralco hiking, consumer pullback. Your brand appears in front of owners who need solutions THIS quarter &mdash; not &ldquo;someday.&rdquo;</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">03</div>
+            <h3>Trusted Co-Sign</h3>
+            <p>Exponential University (100K+ trained) and Gencys Group are vouching for every sponsor on this stage. You inherit the trust they've spent years building.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">04</div>
+            <h3>6-Channel Amplification</h3>
+            <p>Prime, ExpoU, Gencys, Lumina, Bamboo, AIU, and Univoice all push this event to their audiences. Your logo rides along &mdash; before, during, and after May 9.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">05</div>
+            <h3>Full-Day Capture</h3>
+            <p>9 hours of attention &mdash; keynotes, breakouts, masterminds, networking breaks. Booth sponsors get real conversations, not drive-by logo impressions.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">06</div>
+            <h3>Post-Event Longevity</h3>
+            <p>Every asset from the day &mdash; recap videos, testimonial clips, replay content &mdash; carries sponsor logos for months after the event itself.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== AUDIENCE ========== -->
+    <section id="audience" class="sponsor-section section-light">
+      <div class="container">
+        <div class="audience-grid">
+          <div>
+            <h3>Who's In The Room</h3>
+            <p>1,500 Filipino business owners and operators &mdash; the ones who kept going through 2020, 2022, and 2024, and are now choosing what to build next.</p>
+            <p>They came for one reason: to leave with a working system, not another notebook of ideas. That's the mindset your brand gets placed next to.</p>
+          </div>
+          <div>
+            <ul class="audience-list">
+              <li>SME founders with <strong>active revenue</strong> &mdash; retail, food, services, e-com</li>
+              <li>Operators running <strong>5&ndash;50 person teams</strong> looking to systemize</li>
+              <li>Decision-makers with <strong>budget authority</strong> for tools, software, services</li>
+              <li>Coaches and consultants looking for <strong>partners and referral networks</strong></li>
+              <li>Next-gen founders entering <strong>high-inflation, hybrid-work PH reality</strong></li>
+              <li>Members of the <strong>ExpoU + Gencys ecosystem</strong> (100K+ trained)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SPONSOR TIERS ========== -->
+    <section id="tiers" class="sponsor-section section-dark">
+      <div class="container">
+        <h2 class="sponsor-section-heading">Sponsorship Tiers</h2>
+        <p class="sponsor-section-sub">Three ways to show up. All include stage credit, logo placement, and booth access.</p>
+
+        <div class="sponsor-grid">
+
+          <!-- BRONZE -->
+          <article class="sponsor-card" aria-label="Bronze sponsorship tier">
+            <span class="sponsor-badge">Starter</span>
+            <h3 class="sponsor-tier-name">Bronze</h3>
+            <div class="sponsor-price">&#8369;50,000</div>
+            <div class="sponsor-price-sub">Entry-Level Visibility</div>
+            <ul class="sponsor-features">
+              <li>Logo placement across event materials</li>
+              <li>Social media promotion across partner channels</li>
+              <li>5 event tickets for your team or clients</li>
+              <li>Standard exhibitor booth</li>
+              <li>Brand mention in pre-event comms</li>
+            </ul>
+            <a href="#contact" class="btn btn-secondary">Get Bronze</a>
+          </article>
+
+          <!-- GOLD (FEATURED) -->
+          <article class="sponsor-card featured" aria-label="Gold sponsorship tier &mdash; recommended">
+            <span class="sponsor-badge">Most Impact &mdash; 3 Slots</span>
+            <h3 class="sponsor-tier-name">Gold</h3>
+            <div class="sponsor-price">&#8369;99,000</div>
+            <div class="sponsor-price-sub">Full Stage + Booth + Mastermind</div>
+            <ul class="sponsor-features">
+              <li>Everything in Silver, PLUS:</li>
+              <li><strong>PREMIUM booth location</strong> (highest-traffic zone)</li>
+              <li>10 event tickets for your team or clients</li>
+              <li><strong>Special stage mention</strong> at opening AND closing</li>
+              <li>Flyers / inserts in attendee tote bag</li>
+              <li>1-minute brand video played during program</li>
+              <li>Included in <strong>9am&ndash;5pm VIP Mastermind</strong> room access</li>
+              <li>Logo featured on recap videos post-event</li>
+            </ul>
+            <a href="#contact" class="btn btn-primary">Get Gold</a>
+          </article>
+
+          <!-- SILVER -->
+          <article class="sponsor-card" aria-label="Silver sponsorship tier">
+            <span class="sponsor-badge">Mid Tier</span>
+            <h3 class="sponsor-tier-name">Silver</h3>
+            <div class="sponsor-price">&#8369;80,000</div>
+            <div class="sponsor-price-sub">Extended Visibility + Mastermind</div>
+            <ul class="sponsor-features">
+              <li>Everything in Bronze, PLUS:</li>
+              <li>Standard booth with upgraded placement</li>
+              <li>8 event tickets for your team or clients</li>
+              <li>Stage mention during event program</li>
+              <li>1-minute brand video played during program</li>
+              <li>Included in <strong>VIP Mastermind</strong> room access</li>
+            </ul>
+            <a href="#contact" class="btn btn-secondary">Get Silver</a>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== DELIVERABLES ========== -->
+    <section class="sponsor-section section-light">
+      <div class="container">
+        <h2 class="sponsor-section-heading">What You Actually Get</h2>
+        <p class="sponsor-section-sub">Real, measurable brand exposure &mdash; not just a logo on a poster.</p>
+
+        <div class="why-grid">
+          <div class="why-card">
+            <div class="why-icon">&#8599;</div>
+            <h3>Pre-Event</h3>
+            <p>Logo on sales page, event poster, partner emails, and 6 partner social channels for the full ramp-up period.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">&#10025;</div>
+            <h3>Day-Of</h3>
+            <p>Booth placement, stage mentions, LED wall rotation, tote bag inserts, and direct 1:1 conversations with qualified attendees.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">&#8635;</div>
+            <h3>Post-Event</h3>
+            <p>Logo credit on recap videos, testimonial clips, and replay content pushed back out to 100K+ combined partner audiences.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CONTACT / FINAL CTA ========== -->
+    <section id="contact" class="contact-cta section-dark">
+      <div class="container">
+        <h2>Ready to Show Up<br/>On <span class="gold">May 9?</span></h2>
+        <p>Sponsor slots are locked as contracts come in. Reach out and we'll send the full sponsor brief, tier availability, and booking timeline within 24 hours.</p>
+
+        <div class="contact-buttons">
+          <!-- TODO: Replace mailto with real ExpoU point-of-contact email -->
+          <a href="mailto:TBD@exponentialuniversity.ph?subject=Sponsor%20Inquiry%20%E2%80%94%20The%20New%20Business%20Normal" class="btn btn-primary btn-large">Contact Us to Sponsor</a>
+          <a href="/the-new-business-normal" class="btn btn-secondary btn-large">View Event Page</a>
+        </div>
+
+        <!-- TODO: Replace all 3 placeholders (email, phone, messenger) once Paolo confirms the ExpoU point-of-contact -->
+        <div class="contact-card-row">
+          <div class="contact-card">
+            <div class="contact-icon">&#9993;</div>
+            <div class="contact-label">Email</div>
+            <div class="contact-value">TBD@exponentialuniversity.ph</div>
+            <a href="mailto:TBD@exponentialuniversity.ph?subject=Sponsor%20Inquiry%20%E2%80%94%20The%20New%20Business%20Normal" class="contact-btn">Send Email</a>
+          </div>
+          <div class="contact-card">
+            <div class="contact-icon">&#9742;</div>
+            <div class="contact-label">Phone &middot; Viber</div>
+            <div class="contact-value">+63 9XX XXX XXXX</div>
+            <a href="tel:+63000000000" class="contact-btn">Call / Text</a>
+          </div>
+          <div class="contact-card">
+            <div class="contact-icon">&#9775;</div>
+            <div class="contact-label">Messenger</div>
+            <div class="contact-value">m.me/TBD</div>
+            <a href="https://m.me/TBD" target="_blank" rel="noopener" class="contact-btn">Open Chat</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-logos">
+        <img src="/assets/images/expou-logo.png" alt="Exponential University" class="footer-logo" />
+        <span class="footer-x">&times;</span>
+        <img src="/assets/images/gencys-logo.png" alt="Gencys Group" class="footer-logo" />
+      </div>
+      <p class="footer-copy">&copy; 2026 Exponential University &times; Gencys Group | All Rights Reserved</p>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="/the-new-business-normal" class="footer-link">Event Page</a>
+        <a href="#contact" class="footer-link">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Nav scroll behavior (reuses main.js nav logic) -->
+  <script>
+    // Minimal nav toggle + scroll class (mirrors main.js behavior)
+    (function() {
+      const nav = document.querySelector('.nav-bar');
+      const toggle = document.getElementById('nav-toggle');
+      const links = document.getElementById('nav-links');
+
+      const onScroll = () => {
+        if (window.scrollY > 40) nav.classList.add('scrolled');
+        else nav.classList.remove('scrolled');
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      if (toggle && links) {
+        toggle.addEventListener('click', () => {
+          const open = links.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
