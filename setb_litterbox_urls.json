@@ -1,0 +1,82 @@
+{
+  "A1-OUTCOME-B_service_v2": {
+    "idx": 4,
+    "url": "https://litter.catbox.moe/792zou.png"
+  },
+  "A1-PAIN-C_b2b_v2": {
+    "idx": 3,
+    "url": "https://litter.catbox.moe/2enydb.png"
+  },
+  "A1-PAIN-A_ecom_v2": {
+    "idx": 2,
+    "url": "https://litter.catbox.moe/r0y3il.png"
+  },
+  "A1-PAIN-B_service_v2": {
+    "idx": 1,
+    "url": "https://litter.catbox.moe/v8p1kh.png"
+  },
+  "A1-OUTCOME-A_ecom_v2": {
+    "idx": 5,
+    "url": "https://litter.catbox.moe/2fuvei.png"
+  },
+  "A1-OUTCOME-C_b2b_v2": {
+    "idx": 6,
+    "url": "https://litter.catbox.moe/huoxri.png"
+  },
+  "A1-IDENTITY-A_ecom_v2": {
+    "idx": 8,
+    "url": "https://litter.catbox.moe/2ja6qj.png"
+  },
+  "A1-IDENTITY-B_service_v2": {
+    "idx": 7,
+    "url": "https://litter.catbox.moe/5i1yqf.png"
+  },
+  "A1-CURIOSITY-A_ecom_v2": {
+    "idx": 10,
+    "url": "https://litter.catbox.moe/tdqjof.png"
+  },
+  "A1-CURIOSITY-B_service_v2": {
+    "idx": 9,
+    "url": "https://litter.catbox.moe/vilqoj.png"
+  },
+  "A6-EARLYBIRD-CLOCK": {
+    "idx": 11,
+    "url": "https://litter.catbox.moe/mgnajb.png"
+  },
+  "A6-EARLYBIRD-20PERCENT": {
+    "idx": 12,
+    "url": "https://litter.catbox.moe/02rarl.png"
+  },
+  "A6-EARLYBIRD-MAY1-LINE": {
+    "idx": 13,
+    "url": "https://litter.catbox.moe/8a03fa.png"
+  },
+  "A6-SEATS-FILLING": {
+    "idx": 15,
+    "url": "https://litter.catbox.moe/2wrvoo.png"
+  },
+  "A6-DOORS-CLOSING": {
+    "idx": 16,
+    "url": "https://litter.catbox.moe/qg0132.png"
+  },
+  "A6-EARLYBIRD-LAST-48HRS": {
+    "idx": 14,
+    "url": "https://litter.catbox.moe/uekaf3.png"
+  },
+  "A3-AFFIRMATIVE-A_ecom_v2": {
+    "idx": 18,
+    "url": "https://litter.catbox.moe/r9seqa.png"
+  },
+  "A3-DISQUALIFIER_v2": {
+    "idx": 20,
+    "url": "https://litter.catbox.moe/asv338.png"
+  },
+  "A3-AFFIRMATIVE-B_service_v2": {
+    "idx": 17,
+    "url": "https://litter.catbox.moe/czd72m.png"
+  },
+  "A3-AFFIRMATIVE-C_b2b_v2": {
+    "idx": 19,
+    "url": "https://litter.catbox.moe/34m2jt.png"
+  }
+}

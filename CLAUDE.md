@@ -1,14 +1,18 @@
-# Crisis-Proof Business Summit — Project Instructions
+# BUSINESS UNLOCKED — Project Instructions
 
 ## Overview
-One-page sales/checkout site for the Crisis-Proof Business Summit event. Includes UTM tracking, admin reporting dashboard, and email sequences.
+Two parallel workstreams in this folder:
+1. **Sales page** — one-page checkout site with Hormozi/Suby conversion funnel
+2. **Marketing kit** — 13-asset paid social kit produced in Canva. Source of truth: `MARKETING-KIT-PLAN.md`. Editable Canva file (ONLY ONE ALLOWED): `DAHGg4QhXK4` — [CLAUDE] CRISIS PROOF: KCL COPY. Do not create new Canva designs.
 
-## Event Details
-- **Event:** Crisis-Proof Business Summit
+## Event Details (rebranded Apr 12, 2026)
+- **Title:** BUSINESS UNLOCKED
+- **Subtitle:** Turn Crisis into Cashflow
+- **Tagline:** "Turn Crisis into Cashflow. Unlock Your Business."
 - **Date:** May 9, 2026 (Saturday), 9AM-6PM (PHT / UTC+8)
 - **Venue:** Philippine Trade Training Center - Global MSME Academy, Sen. Gil J. Puyat Ave, Pasay, Metro Manila
 - **Organizers:** Exponential University + Gencys Group
-- **Capacity:** 1,500 pax
+- **Capacity:** 2,000 pax
 - **Rates:** Early Bird P1,999 | Regular P2,500 | VIP P5,000
 
 ## Tech Stack
@@ -17,16 +21,16 @@ One-page sales/checkout site for the Crisis-Proof Business Summit event. Include
 - Vercel for hosting + Python serverless functions
 - Paymongo for payments (link TBD)
 - Chart.js (CDN) for admin dashboard charts
-- Google Fonts: Oswald, Rajdhani, Inter, Space Grotesk
+- Google Fonts: Poppins, Lora
 
 ## Branding
-- Dark navy-black background (#0a0e1a)
-- Gold accents (#d4a542) for primary highlights
-- Teal accents (#3bb5c4) for secondary highlights
+- Clean warm white background (#FAFAF9)
+- Teal accents (#0D9488) for primary highlights
+- Amber accents (#F59E0B) for secondary highlights
 - Match the event poster in `../crisis-proof-sales-page/event-poster-no-qr-new-2.png`
 
-## UTM Sources (12)
-pancake, abundance, rtd, rdr, infotxt, gencys, prime, expou, lumina, bamboo, univoice, aiu
+## UTM Sources (14)
+pancake, abundance, rtd, rdr, infotxt, gencys, prime, expou, lumina, bamboo, univoice, aiu, packpoint, youniq
 
 ## Key Rules
 - Mobile-first design (320px base, breakpoints at 768px and 1024px)
@@ -54,3 +58,4 @@ vercel.json         — Vercel config
 - Event brief: `../crisis-proof-sales-page/Event Brief_ Crisis-Proof Summit.pdf`
 - Event poster: `../crisis-proof-sales-page/event-poster-no-qr-new-2.png`
 - Rates image: `../crisis-proof-sales-page/rates-and-inclusions.jpg`
+- Brand deck: `../crisis-proof-sales-page/The_New_Business_Normal_Summit_Brand_Deck-1.pdf`

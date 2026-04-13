@@ -310,8 +310,8 @@ function initCheckout() {
   };
 
   const tierIncludes = {
-    early_bird: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The New Normal Blueprint', 'Networking opportunities'],
-    regular: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The New Normal Blueprint', 'Networking opportunities'],
+    early_bird: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The Cashflow Blueprint', 'Networking opportunities'],
+    regular: ['Full-day access (9AM-6PM)', 'Event kit & materials', 'The Cashflow Blueprint', 'Networking opportunities'],
     vip: ['Everything in Regular +', 'VIP Registration Lane', '6-Month ExU Access', 'Exclusive Mastermind Session'],
   };
 

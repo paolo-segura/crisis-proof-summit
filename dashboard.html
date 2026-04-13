@@ -4,19 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Dashboard — The New Business Normal</title>
+  <title>Dashboard — Business Unlocked</title>
   <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f1b21;
+      --bg: #FAFAF9;
       --panel: #1a2f3a;
       --panel-2: #233c48;
       --border: rgba(255,255,255,0.08);
       --text: #f3f4f6;
       --muted: #9ca3af;
-      --gold: #f3ba5b;
-      --teal: #4dd4c8;
+      --teal: #0D9488;
     }
     * { box-sizing: border-box; }
     body {
@@ -45,7 +44,7 @@
     }
     .subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
     .refresh-btn {
-      background: var(--gold);
+      background: var(--teal);
       color: var(--bg);
       border: none;
       padding: 0.6rem 1.25rem;
@@ -81,7 +80,7 @@
       font-weight: 700;
       color: var(--text);
     }
-    .stat-value.gold { color: var(--gold); }
+    .stat-value.gold { color: var(--teal); }
     .stat-value.teal { color: var(--teal); }
 
     .table-card {
@@ -160,11 +159,11 @@
       font-family: inherit;
       font-size: 0.95rem;
     }
-    .login-field input:focus { outline: none; border-color: var(--gold); }
+    .login-field input:focus { outline: none; border-color: var(--teal); }
     .login-btn {
       width: 100%;
       padding: 0.85rem;
-      background: var(--gold);
+      background: var(--teal);
       color: var(--bg);
       border: none;
       border-radius: 8px;
@@ -205,7 +204,7 @@
   <div class="login-wrap" id="login-wrap">
     <form class="login-card" id="login-form" autocomplete="off">
       <h1 class="login-title">Dashboard Access</h1>
-      <p class="login-sub">THE NEW BUSINESS NORMAL</p>
+      <p class="login-sub">BUSINESS UNLOCKED</p>
       <div class="login-field">
         <label for="login-user">Username</label>
         <input type="text" id="login-user" autocomplete="username" required />
@@ -222,7 +221,7 @@
   <div class="wrap" id="dashboard-wrap" style="display:none;">
     <div class="header">
       <div>
-        <h1>THE NEW BUSINESS NORMAL — Dashboard</h1>
+        <h1>BUSINESS UNLOCKED — Dashboard</h1>
         <div class="subtitle" id="last-updated">Loading…</div>
       </div>
       <div style="display:flex; gap:0.5rem;">

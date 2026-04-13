@@ -1,4 +1,4 @@
-// UTM tracking module — The New Business Normal event
+// UTM tracking module — Business Unlocked event
 // Depends on: supabase-client.js (must load first)
 
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
