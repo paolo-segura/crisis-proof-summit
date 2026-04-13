@@ -934,6 +934,35 @@ body.nav-open {
   -webkit-overflow-scrolling: touch;
   padding-bottom: 1rem;
 }
+/* Video testimonial */
+.video-testimonial {
+  max-width: 360px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+.video-testimonial-player {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  margin-bottom: 1rem;
+}
+.video-testimonial-video {
+  width: 100%;
+  display: block;
+  background: var(--charcoal);
+}
+.video-testimonial-name {
+  font-family: var(--font-subhead);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--charcoal);
+  margin-bottom: 0.15rem;
+}
+.video-testimonial-role {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
 .testimonial-card {
   background: var(--white);
   border: 1px solid rgba(26, 26, 46, 0.06);
