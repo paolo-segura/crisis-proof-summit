@@ -1830,6 +1830,48 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 .pricing-with-video .eb-countdown-sublabel { color: var(--gray-300); }
 
 /* ==============================
+   MOBILE FIXES
+   ============================== */
+@media (max-width: 767px) {
+  /* Smaller body font on mobile */
+  body { font-size: 16px; }
+
+  /* Hero: CTA above timer */
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+  }
+  .hero-eb { order: 10; }
+  .hero-cta-btn { order: 9; }
+  .hero-trust { order: 11; }
+
+  /* Full-screen mobile nav */
+  .nav-links.mobile-open {
+    width: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    border-left: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2rem !important;
+  }
+  .nav-links.mobile-open .nav-link {
+    text-align: center;
+    font-size: 1.25rem;
+    padding: 1.15rem;
+  }
+  .nav-links.mobile-open .nav-cta {
+    font-size: 1.15rem;
+    padding: 1rem 2rem;
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+/* ==============================
    PRINT
    ============================== */
 @media print {
