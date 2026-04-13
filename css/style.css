@@ -1888,8 +1888,10 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
     flex-direction: column;
   }
   .hero-eb { order: 10; }
-  .hero-cta-btn { order: 9; }
+  .hero-cta-btn { order: 9; margin-top: 0; }
   .hero-trust { order: 11; }
+  .hero-sub-answer { margin-bottom: 1.25rem; }
+  .hero-sub { margin-bottom: 0.5rem; }
 
   /* Full-screen mobile nav */
   .nav-links.mobile-open {
