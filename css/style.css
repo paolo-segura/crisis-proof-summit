@@ -1593,7 +1593,7 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 }
 .speaker-card {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 234px 1fr;
   gap: 1.5rem;
   text-align: left;
   padding: 0;
@@ -1609,14 +1609,14 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 .speaker-card:hover { transform: none; box-shadow: none; }
 .speaker-photo { margin-bottom: 0; }
 .speaker-photo-img {
-  width: 180px;
-  height: 260px;
+  width: 234px;
+  height: 338px;
   border-radius: var(--radius);
   object-fit: cover;
   margin: 0;
 }
 .speaker-silhouette {
-  width: 180px;
+  width: 234px;
   height: 200px;
   border-radius: var(--radius);
   margin: 0;
@@ -1709,6 +1709,19 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 }
 @media (max-width: 767px) {
   .speakers-grid-teaser { grid-template-columns: repeat(2, 1fr); }
+  .speakers-grid-confirmed .speaker-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 1rem;
+  }
+  .speakers-grid-confirmed .speaker-photo-img {
+    width: 200px;
+    height: 290px;
+    margin: 0 auto;
+  }
+  .speakers-grid-confirmed .speaker-name,
+  .speakers-grid-confirmed .speaker-title,
+  .speakers-grid-confirmed .speaker-hook { text-align: center; }
 }
 
 /* ==============================
