@@ -600,18 +600,23 @@ body.nav-open {
   border-radius: var(--radius-lg);
   padding: 2rem 1.5rem;
   text-align: center;
-  border: 1px solid var(--border);
+  border: 2px solid var(--teal);
   position: relative;
   display: flex;
   flex-direction: column;
   transition: all 0.4s ease;
 }
-.pricing-card:hover { transform: translateY(-4px); box-shadow: 0 10px 40px rgba(26, 26, 46, 0.08); }
+.pricing-card:hover { transform: translateY(-4px); box-shadow: 0 10px 40px rgba(13, 148, 136, 0.15); }
+/* VIP card — amber outline + glow */
 .pricing-card.featured {
-  border-color: var(--teal);
-  background: linear-gradient(180deg, rgba(13, 148, 136, 0.06) 0%, var(--bg-card) 40%);
-  box-shadow: 0 0 60px var(--teal-glow);
+  border-color: var(--amber);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, var(--bg-card) 40%);
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.2), 0 0 80px rgba(245, 158, 11, 0.1);
 }
+.pricing-card.featured:hover {
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.3), 0 0 100px rgba(245, 158, 11, 0.15);
+}
+/* Early bird badge — teal pill */
 .pricing-badge {
   position: absolute;
   top: -12px;
@@ -624,11 +629,23 @@ body.nav-open {
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  background: var(--gray-200);
-  color: var(--gray-700);
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  color: var(--white);
   white-space: nowrap;
 }
-.badge-vip { background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: var(--white); }
+/* VIP badge — amber pill */
+.badge-vip { background: linear-gradient(135deg, var(--amber), var(--amber-light)); color: var(--charcoal); }
+/* VIP CTA button — amber */
+.pricing-card.featured .ticket-btn {
+  background: linear-gradient(135deg, var(--amber), var(--amber-light)) !important;
+  border-color: var(--amber) !important;
+  color: var(--charcoal) !important;
+}
+.pricing-card.featured .ticket-btn:hover {
+  box-shadow: 0 6px 30px rgba(245, 158, 11, 0.4);
+}
+/* VIP price in amber */
+.pricing-card.featured .price-current { color: var(--amber); }
 .pricing-label { font-family: var(--font-subhead); font-weight: 700; font-size: 1rem; color: var(--gray-500); margin-top: 1rem; text-transform: uppercase; letter-spacing: 2px; }
 .pricing-price { font-family: var(--font-display); font-weight: 700; font-size: 2.8rem; margin: 0.5rem 0; line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; letter-spacing: 0.5px; }
 .price-currency { font-size: 1.1rem; vertical-align: super; margin-right: 2px; }
@@ -1814,13 +1831,13 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 .pricing-with-video > .container { position: relative; z-index: 2; }
 .pricing-with-video .section-heading { color: var(--white); }
 .pricing-with-video .section-sub { color: var(--gray-400); }
-.pricing-with-video .pricing-card { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.1); }
-.pricing-with-video .pricing-card.featured { background: rgba(13, 148, 136, 0.12); border-color: var(--teal); }
+.pricing-with-video .pricing-card { background: rgba(255, 255, 255, 0.08); border-color: var(--teal); }
+.pricing-with-video .pricing-card.featured { background: rgba(245, 158, 11, 0.08); border-color: var(--amber); box-shadow: 0 0 40px rgba(245, 158, 11, 0.2), 0 0 80px rgba(245, 158, 11, 0.1); }
 .pricing-with-video .pricing-features li { color: var(--gray-300); border-bottom-color: rgba(255,255,255,0.08); }
 .pricing-with-video .pricing-label { color: var(--gray-300); }
 .pricing-with-video .price-current { color: var(--teal); }
 .pricing-with-video .pricing-badge { background: var(--gray-700); color: var(--gray-300); }
-.pricing-with-video .badge-vip { background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: var(--white); }
+.pricing-with-video .badge-vip { background: linear-gradient(135deg, var(--amber), var(--amber-light)); color: var(--charcoal); }
 .pricing-with-video .pricing-features li::before { color: var(--teal); }
 .pricing-with-video .pricing-features li.vip-perk::before { color: var(--amber); }
 .pricing-with-video .early-bird-countdown { background: rgba(13, 148, 136, 0.08); border-color: rgba(13, 148, 136, 0.25); }
