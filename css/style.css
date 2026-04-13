@@ -1593,7 +1593,7 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 }
 .speaker-card {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 180px 1fr;
   gap: 1.5rem;
   text-align: left;
   padding: 0;
@@ -1609,14 +1609,14 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 .speaker-card:hover { transform: none; box-shadow: none; }
 .speaker-photo { margin-bottom: 0; }
 .speaker-photo-img {
-  width: 160px;
-  height: 200px;
+  width: 180px;
+  height: 260px;
   border-radius: var(--radius);
   object-fit: cover;
   margin: 0;
 }
 .speaker-silhouette {
-  width: 160px;
+  width: 180px;
   height: 200px;
   border-radius: var(--radius);
   margin: 0;
