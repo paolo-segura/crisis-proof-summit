@@ -170,3 +170,54 @@ def match_purchase_to_participant(purchase, participants):
             return chosen["id"], "mobile"
 
     return None, "direct"
+
+
+# ---------------------------------------------------------------------------
+# Google Sheets reader
+# ---------------------------------------------------------------------------
+
+def _sheets_service():
+    """Build an authenticated Sheets API client from the service account JSON."""
+    # Lazy imports so unit tests don't require google libraries installed
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
+    raw_json = os.environ.get("GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON")
+    if not raw_json:
+        raise EnvironmentError("Missing GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON")
+
+    info = json.loads(raw_json)
+    creds = service_account.Credentials.from_service_account_info(
+        info,
+        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    )
+    # cache_discovery=False avoids filesystem writes on serverless
+    return build("sheets", "v4", credentials=creds, cache_discovery=False)
+
+
+def read_bridge_sheet():
+    """
+    Read all rows from the bridge sheet. Opening it via the API forces
+    IMPORTRANGE to recalculate. Returns a list of rows (each a list of strings).
+    Header rows, if any, are returned as-is — parse_row skips short rows.
+    """
+    sheet_id = os.environ.get("BRIDGE_SHEET_ID")
+    tab = os.environ.get("BRIDGE_SHEET_TAB", "payments")
+    if not sheet_id:
+        raise EnvironmentError("Missing BRIDGE_SHEET_ID")
+
+    svc = _sheets_service()
+
+    # Force refresh: a get() on the spreadsheet triggers IMPORTRANGE re-evaluation.
+    # The values().get() that follows then reads the refreshed values.
+    svc.spreadsheets().get(spreadsheetId=sheet_id).execute()
+
+    # Read A:Q (17 columns — matches Scale Your Org row width)
+    result = svc.spreadsheets().values().get(
+        spreadsheetId=sheet_id,
+        range=f"{tab}!A:Q",
+    ).execute()
+
+    return result.get("values", [])
+
+    return None, "direct"
