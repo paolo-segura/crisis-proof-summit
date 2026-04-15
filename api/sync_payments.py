@@ -387,3 +387,135 @@ def supabase_write_sync_log(log):
         body=log,
         extra_headers={"Prefer": "return=minimal"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator
+# ---------------------------------------------------------------------------
+
+def _iso_now():
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def _utm_from_participant(p):
+    return {
+        "utm_source":   p.get("utm_source"),
+        "utm_medium":   p.get("utm_medium"),
+        "utm_campaign": p.get("utm_campaign"),
+        "utm_content":  p.get("utm_content"),
+    }
+
+
+_EMPTY_UTM = {
+    "utm_source": None,
+    "utm_medium": None,
+    "utm_campaign": None,
+    "utm_content": None,
+}
+
+
+def run_sync(
+    read_rows,
+    upsert,
+    fetch_participants,
+    fetch_unmatched,
+    update_match,
+    write_log,
+):
+    """
+    Execute one sync cycle. All I/O is injected so this is unit-testable.
+    Returns a dict with counts + success flag. Also writes an audit log row.
+    """
+    started_at = _iso_now()
+    errors = []
+    rows_read = 0
+    rows_upserted = 0
+    rows_matched = 0
+    rows_unmatched = 0
+
+    try:
+        # ---- Phase 1: read + parse ----
+        raw_rows = read_rows()
+        rows_read = len(raw_rows)
+
+        parsed = []
+        for r in raw_rows:
+            try:
+                purchase = parse_row(r)
+                if purchase is not None:
+                    parsed.append(purchase)
+            except Exception as exc:  # noqa: BLE001
+                errors.append({"phase": "parse", "error": str(exc), "row_preview": str(r)[:120]})
+
+        # ---- Phase 2: batch fetch candidate participants ----
+        emails = {p["email"] for p in parsed if p["email"]}
+        mobiles = {p["mobile"] for p in parsed if p["mobile"]}
+        participants = fetch_participants(emails, mobiles) if (emails or mobiles) else []
+
+        # ---- Phase 3: match + upsert each purchase ----
+        for purchase in parsed:
+            try:
+                pid, method = match_purchase_to_participant(purchase, participants)
+                if pid:
+                    matched_p = next(p for p in participants if p["id"] == pid)
+                    utm = _utm_from_participant(matched_p)
+                    rows_matched += 1
+                else:
+                    utm = dict(_EMPTY_UTM)
+                upsert(purchase, pid, method, utm)
+                rows_upserted += 1
+                if not pid:
+                    rows_unmatched += 1
+            except Exception as exc:  # noqa: BLE001
+                errors.append({
+                    "phase": "upsert",
+                    "error": str(exc),
+                    "order_id": purchase.get("order_id"),
+                })
+
+        # ---- Phase 4: re-match older unmatched purchases ----
+        unmatched = fetch_unmatched(days=7)
+        if unmatched:
+            r_emails = {u.get("email") for u in unmatched if u.get("email")}
+            r_mobiles = {u.get("mobile") for u in unmatched if u.get("mobile")}
+            rematch_pool = fetch_participants(r_emails, r_mobiles) if (r_emails or r_mobiles) else []
+            for u in unmatched:
+                try:
+                    pid, method = match_purchase_to_participant(u, rematch_pool)
+                    if pid:
+                        matched_p = next(p for p in rematch_pool if p["id"] == pid)
+                        update_match(u["order_id"], pid, method, _utm_from_participant(matched_p))
+                        rows_matched += 1
+                        rows_unmatched = max(0, rows_unmatched - 1)
+                except Exception as exc:  # noqa: BLE001
+                    errors.append({
+                        "phase": "rematch",
+                        "error": str(exc),
+                        "order_id": u.get("order_id"),
+                    })
+
+        success = len(errors) == 0
+
+    except Exception as exc:  # noqa: BLE001
+        errors.append({"phase": "top_level", "error": str(exc)})
+        success = False
+
+    finished_at = _iso_now()
+
+    log = {
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "rows_read": rows_read,
+        "rows_upserted": rows_upserted,
+        "rows_matched": rows_matched,
+        "rows_unmatched": rows_unmatched,
+        "errors": errors if errors else None,
+        "success": success,
+    }
+    try:
+        write_log(log)
+    except Exception:  # noqa: BLE001
+        pass  # never fail the sync just because the log write failed
+
+    return log

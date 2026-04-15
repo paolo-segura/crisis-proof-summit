@@ -222,3 +222,147 @@ def test_match_handles_participants_with_missing_fields():
     )
     assert pid == "p1"
     assert method == "email"
+
+
+# ---------- run_sync (orchestrator) ----------
+
+class _FakeSupabase:
+    """In-memory stand-in for the Supabase helpers."""
+    def __init__(self, participants=None, unmatched=None):
+        self.participants = participants or []
+        self.unmatched = unmatched or []
+        self.upserted = []
+        self.patched = []
+        self.logs = []
+
+    def upsert(self, purchase, participant_id, match_method, utm_fields):
+        self.upserted.append({
+            "purchase": purchase, "participant_id": participant_id,
+            "method": match_method, "utm": utm_fields,
+        })
+
+    def fetch_participants(self, emails, mobiles):
+        hits = []
+        for p in self.participants:
+            p_email = (p.get("email") or "").lower().strip()
+            p_mobile_norm = sp.normalize_mobile(p.get("mobile_number"))
+            if p_email in emails or (p_mobile_norm and p_mobile_norm in mobiles):
+                hits.append(p)
+        return hits
+
+    def fetch_unmatched(self, days=7):
+        return list(self.unmatched)
+
+    def update_match(self, order_id, pid, method, utm):
+        self.patched.append({"order_id": order_id, "pid": pid, "method": method, "utm": utm})
+
+    def write_log(self, log):
+        self.logs.append(log)
+
+
+def test_run_sync_upserts_matched_purchase_with_utm():
+    fake = _FakeSupabase(participants=[
+        _pt("p1", email="wyne_ramos@yahoo.com", created_at="2026-04-11T12:00:00Z",
+            utm_source="pancake"),
+    ])
+    rows = [list(SAMPLE_ROW)]
+
+    result = sp.run_sync(
+        read_rows=lambda: rows,
+        upsert=fake.upsert,
+        fetch_participants=fake.fetch_participants,
+        fetch_unmatched=fake.fetch_unmatched,
+        update_match=fake.update_match,
+        write_log=fake.write_log,
+    )
+
+    assert len(fake.upserted) == 1
+    assert fake.upserted[0]["method"] == "email"
+    assert fake.upserted[0]["utm"]["utm_source"] == "pancake"
+    assert result["rows_upserted"] == 1
+    assert result["rows_matched"] == 1
+    assert result["rows_unmatched"] == 0
+    assert result["success"] is True
+
+
+def test_run_sync_unmatched_purchase_marked_direct():
+    fake = _FakeSupabase(participants=[])
+    rows = [list(SAMPLE_ROW)]
+
+    sp.run_sync(
+        read_rows=lambda: rows,
+        upsert=fake.upsert,
+        fetch_participants=fake.fetch_participants,
+        fetch_unmatched=fake.fetch_unmatched,
+        update_match=fake.update_match,
+        write_log=fake.write_log,
+    )
+
+    assert fake.upserted[0]["method"] == "direct"
+    assert fake.upserted[0]["utm"] == {
+        "utm_source": None, "utm_medium": None, "utm_campaign": None, "utm_content": None,
+    }
+
+
+def test_run_sync_rematches_unmatched_purchases():
+    fake = _FakeSupabase(
+        participants=[
+            _pt("p1", email="late@example.com", created_at="2026-04-13T09:00:00Z",
+                utm_source="gencys"),
+        ],
+        unmatched=[
+            {"order_id": "TXN-OLD", "email": "late@example.com",
+             "mobile": "", "paid_at": "2026-04-12T10:00:00Z"},
+        ],
+    )
+
+    sp.run_sync(
+        read_rows=lambda: [],
+        upsert=fake.upsert,
+        fetch_participants=fake.fetch_participants,
+        fetch_unmatched=fake.fetch_unmatched,
+        update_match=fake.update_match,
+        write_log=fake.write_log,
+    )
+
+    assert len(fake.patched) == 1
+    assert fake.patched[0]["order_id"] == "TXN-OLD"
+    assert fake.patched[0]["method"] == "email"
+    assert fake.patched[0]["utm"]["utm_source"] == "gencys"
+
+
+def test_run_sync_skips_malformed_rows_and_records_errors():
+    fake = _FakeSupabase(participants=[])
+    rows = [
+        ["only", "two"],               # too short -> skipped
+        list(SAMPLE_ROW),               # valid
+    ]
+
+    result = sp.run_sync(
+        read_rows=lambda: rows,
+        upsert=fake.upsert,
+        fetch_participants=fake.fetch_participants,
+        fetch_unmatched=fake.fetch_unmatched,
+        update_match=fake.update_match,
+        write_log=fake.write_log,
+    )
+
+    assert result["rows_read"] == 2
+    assert result["rows_upserted"] == 1
+    assert result["success"] is True
+
+
+def test_run_sync_writes_audit_log():
+    fake = _FakeSupabase()
+    sp.run_sync(
+        read_rows=lambda: [],
+        upsert=fake.upsert,
+        fetch_participants=fake.fetch_participants,
+        fetch_unmatched=fake.fetch_unmatched,
+        update_match=fake.update_match,
+        write_log=fake.write_log,
+    )
+    assert len(fake.logs) == 1
+    log = fake.logs[0]
+    assert "started_at" in log and "finished_at" in log
+    assert log["success"] is True
