@@ -9,6 +9,7 @@
     { "source": "/the-new-business-normal/sponsors", "destination": "/sponsors.html" },
     { "source": "/thank-you", "destination": "/thank-you.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/admin", "destination": "/admin.html" },
     { "source": "/participant-details", "destination": "/participant-details.html" }
   ],
   "headers": [

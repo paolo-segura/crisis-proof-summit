@@ -75,6 +75,9 @@ async function apiFetch(action) {
   return res.json();
 }
 
+// Expose apiFetch globally so admin-sales.js can use it after auth.
+window.apiFetch = apiFetch;
+
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 async function attemptLogin(pw) {
   try {
@@ -119,6 +122,7 @@ async function handleLogin() {
 function showDashboard() {
   loginScreen.style.display = 'none';
   dashboard.style.display = 'block';
+  window.dispatchEvent(new Event('admin:authed'));
   refreshAll();
   startAutoRefresh();
 }

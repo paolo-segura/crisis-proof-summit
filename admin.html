@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;700&family=Oswald:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     *, *::before, *::after {
@@ -578,6 +579,59 @@
         transform: rotate(90deg);
       }
     }
+
+    /* ─── Sales & UTM Attribution section ─────────────────────────────────── */
+    #sales-attribution {
+      margin-top: 8px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .card-header h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0;
+    }
+    /* Override light-mode KPI & chart styles for dark admin theme */
+    #sales-attribution .kpi {
+      background: var(--card-border);
+      border-color: rgba(255,255,255,0.08);
+    }
+    #sales-attribution .kpi-label { color: var(--text-muted); }
+    #sales-attribution .kpi-value { color: #4cd5c9; }
+    #sales-attribution .chart-cell {
+      background: var(--card-border);
+      border-color: rgba(255,255,255,0.08);
+    }
+    #sales-attribution .chart-cell h3 { color: var(--text-muted); }
+    #sales-attribution .recent-payments h3 { color: var(--text-muted); }
+    #sales-attribution .table-wrap {
+      border-color: rgba(255,255,255,0.08);
+    }
+    #sales-attribution .table-wrap table { color: var(--text); }
+    #sales-attribution .table-wrap th {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      border-bottom-color: rgba(255,255,255,0.08);
+    }
+    #sales-attribution .table-wrap td {
+      border-bottom-color: rgba(255,255,255,0.05);
+    }
+    #sales-attribution .sync-status { color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -608,6 +662,75 @@
     </div>
 
     <div id="inline-error" class="inline-error"></div>
+
+    <!-- Sales & UTM Attribution -->
+    <section id="sales-attribution" class="card">
+      <header class="card-header">
+        <h2>Sales &amp; UTM Attribution</h2>
+        <div class="sync-status" id="sync-status">
+          <span class="dot" id="sync-dot">•</span>
+          <span id="sync-label">Last sync: checking…</span>
+        </div>
+      </header>
+
+      <!-- KPI strip -->
+      <div class="kpi-strip">
+        <div class="kpi">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value" id="kpi-revenue">₱0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Tickets Sold</div>
+          <div class="kpi-value" id="kpi-tickets">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Visit → Paid</div>
+          <div class="kpi-value" id="kpi-conv">0%</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Unmatched (direct)</div>
+          <div class="kpi-value" id="kpi-unmatched">0</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-grid">
+        <div class="chart-cell">
+          <h3>Revenue by UTM source</h3>
+          <canvas id="chart-revenue-utm" height="220"></canvas>
+        </div>
+        <div class="chart-cell">
+          <h3>Tickets by UTM source × tier</h3>
+          <canvas id="chart-tickets-utm-tier" height="220"></canvas>
+        </div>
+        <div class="chart-cell full-width">
+          <h3>Conversion funnel by UTM source</h3>
+          <canvas id="chart-conversion-utm" height="260"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent payments -->
+      <div class="recent-payments">
+        <h3>Recent payments</h3>
+        <div class="table-wrap">
+          <table id="table-recent-payments">
+            <thead>
+              <tr>
+                <th>Paid at</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Tier</th>
+                <th>Amount</th>
+                <th>UTM source</th>
+                <th>Match</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody><!-- rows inserted by admin-sales.js --></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <!-- Summary Cards -->
     <div class="summary-grid">
@@ -725,5 +848,6 @@
   </div>
 
   <script src="js/admin.js"></script>
+  <script src="js/admin-sales.js"></script>
 </body>
 </html>

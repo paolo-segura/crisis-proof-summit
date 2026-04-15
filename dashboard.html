@@ -197,6 +197,30 @@
       h1 { font-size: 1.4rem; }
       .stat-value { font-size: 1.5rem; }
     }
+
+    .sales-link-banner {
+      background: #0d9488;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      margin: 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    .sales-link-banner a {
+      background: #fff;
+      color: #0d9488;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .sales-link-banner a:hover { filter: brightness(0.95); }
+    @media (max-width: 768px) {
+      .sales-link-banner { flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }
+    }
   </style>
 </head>
 <body>
@@ -228,6 +252,11 @@
         <button class="logout-btn" onclick="logout()">Log Out</button>
         <button class="refresh-btn" onclick="loadAll()">Refresh</button>
       </div>
+    </div>
+
+    <div class="sales-link-banner">
+      <span><strong>📊 Sales &amp; UTM Attribution dashboard</strong> — view revenue per UTM, conversion funnel, and recent payments</span>
+      <a href="/admin" target="_blank" rel="noopener">Open Sales Dashboard →</a>
     </div>
 
     <div class="stat-grid">
