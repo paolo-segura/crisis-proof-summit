@@ -221,3 +221,169 @@ def read_bridge_sheet():
     ).execute()
 
     return result.get("values", [])
+
+
+# ---------------------------------------------------------------------------
+# Supabase PostgREST helpers (stdlib only, matches api/report.py pattern)
+# ---------------------------------------------------------------------------
+
+import urllib.request
+import urllib.error
+from urllib.parse import quote
+
+PURCHASES_TABLE = "new_business_normal_purchases"
+PARTICIPANTS_TABLE = "new_business_normal_participants"
+SYNC_LOG_TABLE = "new_business_normal_sync_log"
+
+
+def _supabase_env():
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY")
+    if not url or not key:
+        raise EnvironmentError("Missing SUPABASE_URL or SUPABASE_SERVICE_KEY")
+    return url.rstrip("/"), key
+
+
+def _supabase_request(method, path, body=None, extra_headers=None):
+    """Generic PostgREST request. Returns parsed JSON (list or dict) or [] on empty body."""
+    supabase_url, key = _supabase_env()
+    url = f"{supabase_url}/rest/v1/{path.lstrip('/')}"
+
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header("apikey", key)
+    req.add_header("Authorization", f"Bearer {key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    if extra_headers:
+        for k, v in extra_headers.items():
+            req.add_header(k, v)
+
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        raw = resp.read().decode("utf-8")
+        if not raw:
+            return []
+        return json.loads(raw)
+
+
+def supabase_upsert_purchase(purchase, participant_id, match_method, utm_fields):
+    """
+    Upsert one row into new_business_normal_purchases by order_id.
+    utm_fields is a dict with utm_source/medium/campaign/content (may have None values).
+    """
+    row = {
+        "order_id":         purchase["order_id"],
+        "email":            purchase["email"],
+        "mobile":           purchase["mobile"],
+        "full_name":        purchase["full_name"],
+        "ticket_tier":      purchase["ticket_tier"],
+        "amount":           purchase["amount"],
+        "quantity":         purchase["quantity"],
+        "total":            purchase["total"],
+        "payment_provider": purchase["payment_provider"],
+        "payment_status":   purchase["payment_status"],
+        "paid_at":          purchase["paid_at"],
+        "participant_id":   participant_id,
+        "match_method":     match_method,
+        "utm_source":       utm_fields.get("utm_source"),
+        "utm_medium":       utm_fields.get("utm_medium"),
+        "utm_campaign":     utm_fields.get("utm_campaign"),
+        "utm_content":      utm_fields.get("utm_content"),
+        "raw_row":          purchase["raw_row"],
+    }
+
+    # PostgREST upsert: POST with Prefer: resolution=merge-duplicates
+    # Requires a UNIQUE constraint on the conflict target — we have one on order_id
+    # (partial, WHERE order_id IS NOT NULL) from the 2026-04-14 migration.
+    _supabase_request(
+        "POST",
+        f"{PURCHASES_TABLE}?on_conflict=order_id",
+        body=row,
+        extra_headers={
+            "Prefer": "resolution=merge-duplicates,return=minimal",
+        },
+    )
+
+
+def supabase_fetch_participants_by_contacts(emails, mobiles):
+    """
+    Fetch participants whose email is in `emails` OR whose mobile_number matches
+    any of `mobiles`. Both args are sets of normalized strings.
+
+    Mobile matching is tricky: participants.mobile_number is stored in raw form
+    (e.g. '+639178334375', '09178334375'). We overfetch candidates by using
+    ilike *{last_10_digits}*, then the caller (matcher) re-normalizes via
+    normalize_mobile to get an exact match.
+    """
+    if not emails and not mobiles:
+        return []
+
+    clauses = []
+    if emails:
+        # PostgREST `in` filter: email=in.(a@x.com,b@y.com)
+        quoted = ",".join(f"\"{e}\"" for e in emails)
+        clauses.append(f"email.in.({quoted})")
+    if mobiles:
+        # PostgREST `or` over ilike matches on last-10-digit substrings
+        mobile_clauses = ",".join(f"mobile_number.ilike.*{m}*" for m in mobiles)
+        clauses.append(f"or({mobile_clauses})") if len(mobiles) > 1 else clauses.append(
+            f"mobile_number.ilike.*{next(iter(mobiles))}*"
+        )
+
+    if len(clauses) == 1:
+        filter_expr = clauses[0]
+    else:
+        filter_expr = "or=(" + ",".join(clauses) + ")"
+
+    # If the top-level filter is a single clause, use it directly.
+    # If multiple clauses, combine with top-level `or=(...)`.
+    select = "id,email,mobile_number,created_at,utm_source,utm_medium,utm_campaign,utm_content"
+    if filter_expr.startswith("or=("):
+        path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
+    else:
+        path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
+
+    return _supabase_request("GET", path) or []
+
+
+def supabase_fetch_unmatched_purchases(days=7):
+    """Fetch purchases with NULL participant_id and paid_at within N days."""
+    import datetime
+    cutoff = (datetime.datetime.now(datetime.timezone.utc)
+              - datetime.timedelta(days=days)).isoformat()
+    path = (
+        f"{PURCHASES_TABLE}"
+        f"?select=order_id,email,mobile,paid_at"
+        f"&participant_id=is.null"
+        f"&paid_at=gte.{cutoff}"
+    )
+    return _supabase_request("GET", path) or []
+
+
+def supabase_update_purchase_match(order_id, participant_id, match_method, utm_fields):
+    """PATCH a purchase by order_id to attach it to a participant with UTM attribution."""
+    body = {
+        "participant_id": participant_id,
+        "match_method":   match_method,
+        "utm_source":     utm_fields.get("utm_source"),
+        "utm_medium":     utm_fields.get("utm_medium"),
+        "utm_campaign":   utm_fields.get("utm_campaign"),
+        "utm_content":    utm_fields.get("utm_content"),
+    }
+    path = f"{PURCHASES_TABLE}?order_id=eq.{quote(order_id)}"
+    _supabase_request(
+        "PATCH",
+        path,
+        body=body,
+        extra_headers={"Prefer": "return=minimal"},
+    )
+
+
+def supabase_write_sync_log(log):
+    """Insert one audit row. `log` must include started_at, finished_at, counts, errors, success."""
+    _supabase_request(
+        "POST",
+        SYNC_LOG_TABLE,
+        body=log,
+        extra_headers={"Prefer": "return=minimal"},
+    )
