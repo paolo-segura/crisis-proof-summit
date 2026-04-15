@@ -6,6 +6,13 @@ import urllib.parse
 import urllib.error
 from collections import defaultdict
 
+# Actual Supabase table names (shared prefix for this event)
+TABLE_VISITS = "new_business_normal_visits"
+TABLE_CLICKS = "new_business_normal_clicks"
+TABLE_PARTICIPANTS = "new_business_normal_participants"
+TABLE_PURCHASES = "new_business_normal_purchases"
+TABLE_SYNC_LOG = "new_business_normal_sync_log"
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -107,11 +114,11 @@ def handle_summary(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, "page_visits?select=id")
-        clicks = supabase_get(supabase_url, service_key, "clicks?select=id")
+        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=id")
+        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=id")
         sales = supabase_get(
             supabase_url, service_key,
-            "sales?select=id,amount&payment_status=eq.paid"
+            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -138,11 +145,11 @@ def handle_by_utm(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, "page_visits?select=utm_source")
-        clicks = supabase_get(supabase_url, service_key, "clicks?select=utm_source")
+        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=utm_source")
+        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=utm_source")
         sales = supabase_get(
             supabase_url, service_key,
-            "sales?select=utm_source,amount,ticket_tier&payment_status=eq.paid"
+            f"{TABLE_PURCHASES}?select=utm_source,amount,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -202,7 +209,7 @@ def handle_by_tier(h, supabase_url, service_key):
     try:
         sales = supabase_get(
             supabase_url, service_key,
-            "sales?select=ticket_tier,amount&payment_status=eq.paid"
+            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -244,7 +251,7 @@ def handle_clicks_over_time(h, supabase_url, service_key):
     try:
         clicks = supabase_get(
             supabase_url, service_key,
-            "clicks?select=clicked_at&clicked_at=gte." + _thirty_days_ago()
+            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -271,6 +278,129 @@ def _thirty_days_ago():
     import datetime
     cutoff = datetime.date.today() - datetime.timedelta(days=30)
     return cutoff.isoformat()
+
+
+def handle_revenue_by_utm(h, supabase_url, service_key):
+    """GET /api/report?action=revenue_by_utm — ₱ per UTM source"""
+    if not check_auth(h):
+        return
+    try:
+        purchases = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=utm_source,amount&payment_status=in.(PAID,FULLY_PAID)"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+
+    def norm(v): return v if v else "direct"
+    buckets = defaultdict(float)
+    for row in purchases:
+        buckets[norm(row.get("utm_source"))] += float(row.get("amount", 0) or 0)
+
+    result = [{"utm_source": k, "revenue": round(v, 2)}
+              for k, v in sorted(buckets.items(), key=lambda kv: kv[1], reverse=True)]
+    _send_json(h, 200, result)
+
+
+def handle_tickets_by_utm_tier(h, supabase_url, service_key):
+    """GET /api/report?action=tickets_by_utm_tier — stacked bar data"""
+    if not check_auth(h):
+        return
+    try:
+        purchases = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=utm_source,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+
+    def norm(v): return v if v else "direct"
+    stacks = defaultdict(lambda: {"early_bird": 0, "regular": 0, "vip": 0, "other": 0})
+    for row in purchases:
+        src = norm(row.get("utm_source"))
+        tier = row.get("ticket_tier") or "other"
+        if tier not in ("early_bird", "regular", "vip"):
+            tier = "other"
+        stacks[src][tier] += 1
+
+    result = [{"utm_source": src, **counts}
+              for src, counts in sorted(stacks.items(),
+                  key=lambda kv: sum(kv[1].values()), reverse=True)]
+    _send_json(h, 200, result)
+
+
+def handle_conversion_by_utm(h, supabase_url, service_key):
+    """
+    GET /api/report?action=conversion_by_utm
+    Returns visits, participants, purchases per UTM source with % conversion rates.
+    """
+    if not check_auth(h):
+        return
+    try:
+        visits = supabase_get(supabase_url, service_key,
+            f"{TABLE_VISITS}?select=utm_source")
+        participants = supabase_get(supabase_url, service_key,
+            f"{TABLE_PARTICIPANTS}?select=utm_source")
+        purchases = supabase_get(supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=utm_source&payment_status=in.(PAID,FULLY_PAID)")
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+
+    def norm(v): return v if v else "direct"
+    v_c = defaultdict(int); p_c = defaultdict(int); b_c = defaultdict(int)
+    for r in visits:       v_c[norm(r.get("utm_source"))] += 1
+    for r in participants: p_c[norm(r.get("utm_source"))] += 1
+    for r in purchases:    b_c[norm(r.get("utm_source"))] += 1
+
+    sources = set(v_c) | set(p_c) | set(b_c)
+    def pct(n, d): return round((n / d) * 100, 2) if d else 0
+
+    result = []
+    for src in sorted(sources):
+        v = v_c[src]; p = p_c[src]; b = b_c[src]
+        result.append({
+            "utm_source": src,
+            "visits": v, "participants": p, "paid": b,
+            "visit_to_form_pct": pct(p, v),
+            "form_to_paid_pct":  pct(b, p),
+            "visit_to_paid_pct": pct(b, v),
+        })
+    _send_json(h, 200, result)
+
+
+def handle_recent_payments(h, supabase_url, service_key):
+    """GET /api/report?action=recent_payments — last 50 purchases (from sync)"""
+    if not check_auth(h):
+        return
+    try:
+        purchases = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status"
+            f"&order=paid_at.desc.nullslast&limit=50"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+    _send_json(h, 200, purchases)
+
+
+def handle_last_sync(h, supabase_url, service_key):
+    """GET /api/report?action=last_sync — most recent sync log row"""
+    if not check_auth(h):
+        return
+    try:
+        logs = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_SYNC_LOG}?select=started_at,finished_at,rows_read,rows_upserted,rows_matched,rows_unmatched,success,errors"
+            f"&order=started_at.desc&limit=1"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+    _send_json(h, 200, logs[0] if logs else None)
 
 
 # ---------------------------------------------------------------------------
@@ -317,9 +447,29 @@ class handler(BaseHTTPRequestHandler):
         elif action == "clicks_over_time":
             handle_clicks_over_time(self, supabase_url, service_key)
 
+        elif action == "revenue_by_utm":
+            handle_revenue_by_utm(self, supabase_url, service_key)
+
+        elif action == "tickets_by_utm_tier":
+            handle_tickets_by_utm_tier(self, supabase_url, service_key)
+
+        elif action == "conversion_by_utm":
+            handle_conversion_by_utm(self, supabase_url, service_key)
+
+        elif action == "recent_payments":
+            handle_recent_payments(self, supabase_url, service_key)
+
+        elif action == "last_sync":
+            handle_last_sync(self, supabase_url, service_key)
+
         else:
             _send_json(self, 400, {
-                "error": f"Unknown action: '{action}'. Valid actions: auth, summary, by_utm, by_tier, clicks_over_time"
+                "error": (
+                    f"Unknown action: '{action}'. Valid actions: "
+                    "auth, summary, by_utm, by_tier, clicks_over_time, "
+                    "revenue_by_utm, tickets_by_utm_tier, conversion_by_utm, "
+                    "recent_payments, last_sync"
+                )
             })
 
     def log_message(self, format, *args):
