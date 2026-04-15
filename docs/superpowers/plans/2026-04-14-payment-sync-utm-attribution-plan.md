@@ -12,6 +12,81 @@
 
 ---
 
+## ⚠️ Schema Corrections (Apr 14, 2026 — after inspecting live DB)
+
+Read this section BEFORE any code-writing task. It overrides specifics in later tasks.
+
+**Actual Supabase project:** `nvhzajpstswkmmfrgtiw` (NOT the `hjfuxwytpyqhuvrbssds` project — that one's empty).
+
+**Migration already applied via SQL Editor.** Task 2 is done; code written at `supabase/migrations/2026-04-14_purchases_sync_and_log.sql` is a historical record, not something to re-run.
+
+### Real column names (overrides plan body where it disagrees)
+
+**`new_business_normal_participants`** (populated by `js/participant-form.js`):
+```
+id bigint PK, created_at timestamptz, session_id, full_name, email, mobile_number,
+describes_you, business_type, referred_by,
+utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+page_url, user_agent
+```
+
+**`new_business_normal_purchases`** (after migration — existing cols + added):
+```
+id uuid PK, created_at timestamptz,
+-- pre-existing (checkout snapshot):
+session_id, ticket_tier, order_id, amount numeric, email,
+utm_source, utm_medium, utm_campaign, utm_content, utm_term, raw_query,
+-- added by migration (sync fields):
+full_name, mobile, quantity, total numeric(10,2), payment_provider,
+payment_status, paid_at timestamptz,
+participant_id bigint → participants(id),
+match_method, raw_row jsonb, synced_at timestamptz default now()
+```
+Partial UNIQUE index on `order_id WHERE order_id IS NOT NULL` exists. Use `order_id` as the sync upsert key.
+
+**`new_business_normal_sync_log`**: as the plan describes.
+
+### Renames from plan body (apply mentally / in subagent prompts)
+
+| Plan says | Reality | Applies to |
+|---|---|---|
+| `transaction_id` | `order_id` | Task 6 parser, Task 9 upsert, Task 10 orchestrator tests |
+| `tier` (column) | `ticket_tier` | All code & dashboard refs |
+| `tier` (value "VIP") | `vip` (lowercase_underscore) | Task 5 parser returns normalized tier |
+| `submitted_at` | `created_at` | Task 7 matcher tie-break, Task 9 participant fetch |
+| `participant_id uuid` | `participant_id bigint` | FK type only (no code impact) |
+| Rename `amount` → `total` in report.py | Keep `amount` as-is | Task 12 |
+| Rename `ticket_tier` → `tier` in report.py | Keep `ticket_tier` as-is | Task 12 |
+| Capitalized tier keys ("VIP", "Regular", "Early Bird") in dashboard | `vip`, `regular`, `early_bird` stored; display-map in JS | Tasks 12, 13 |
+
+### Tier normalization spec (Task 5)
+
+`parse_tier("THE NEW BUSINESS NORMAL | VIP")` → `"vip"`
+`parse_tier("... | Regular")` → `"regular"`
+`parse_tier("... | Early Bird")` → `"early_bird"`
+Algorithm: split on `|`, take last part, `.strip().lower()`, replace spaces with `_`.
+
+### Purchase dict shape (used in Tasks 6, 9, 10)
+
+```python
+{
+  "order_id":         "TXN-...",          # was 'transaction_id'
+  "full_name":        "Wynes Ramos",
+  "email":            "wyne_ramos@yahoo.com",
+  "mobile":           "9178334375",
+  "ticket_tier":      "vip",              # was 'tier'
+  "amount":           4999.98,
+  "quantity":         1,
+  "total":            4999.98,
+  "payment_provider": "xendit",
+  "payment_status":   "FULLY_PAID",
+  "paid_at":          "2026-04-12T01:39:45.555Z",
+  "raw_row":          [...],
+}
+```
+
+---
+
 ## File Structure
 
 **Create:**
