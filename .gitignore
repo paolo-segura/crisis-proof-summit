@@ -2,3 +2,6 @@
 .vercel
 node_modules/
 assets/hero-bg.mp4
+.venv/
+__pycache__/
+*.pyc
