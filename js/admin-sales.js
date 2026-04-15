@@ -203,6 +203,55 @@
     }
   }
 
+  async function downloadParticipantsCSV() {
+    var btn = document.getElementById('btn-download-participants');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Preparing…'; }
+    try {
+      var rows = await window.apiFetch('all_participants') || [];
+      var headers = ['When', 'Name', 'Email', 'Mobile', 'Role', 'Business Type', 'Referred By', 'UTM Source', 'UTM Medium', 'UTM Campaign', 'UTM Content'];
+      var csvLines = [headers.join(',')];
+      rows.forEach(function (r) {
+        var line = [
+          r.created_at || '',
+          r.full_name || '',
+          r.email || '',
+          r.mobile_number || '',
+          r.describes_you || '',
+          r.business_type || '',
+          r.referred_by || '',
+          r.utm_source || '',
+          r.utm_medium || '',
+          r.utm_campaign || '',
+          r.utm_content || ''
+        ].map(csvEscape).join(',');
+        csvLines.push(line);
+      });
+      var csv = csvLines.join('\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var date = new Date().toISOString().slice(0, 10);
+      var filename = 'business-unlocked-participants-' + date + '.csv';
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('CSV download failed: ' + (err && err.message ? err.message : err));
+      console.error('[admin-sales] csv download failed', err);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '📊 Download CSV (all)'; }
+    }
+  }
+
+  function csvEscape(val) {
+    var s = String(val == null ? '' : val);
+    if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
   function renderParticipantsTable(rows) {
     var tbody = document.querySelector('#table-recent-participants tbody');
     if (!tbody) return;
@@ -226,6 +275,8 @@
   }
 
   async function loadAll() {
+    var dl = document.getElementById('btn-download-participants');
+    if (dl) dl.addEventListener('click', downloadParticipantsCSV);
     try {
       await loadSyncStatus();
       var recent = await loadKPIs();

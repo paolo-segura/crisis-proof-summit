@@ -2406,6 +2406,25 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 .recent-participants { margin-top: 24px; margin-bottom: 24px; }
 .recent-participants h3 { font-size: 14px; color: #374151; margin: 0 0 8px; }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.btn-csv {
+  background: #0d9488;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-csv:hover { filter: brightness(0.95); }
+.btn-csv:disabled { opacity: 0.5; cursor: wait; }
+
 @media (max-width: 768px) {
   .chart-grid { grid-template-columns: 1fr; }
   .sales-link-banner { flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }

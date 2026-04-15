@@ -43,6 +43,60 @@ def supabase_get(supabase_url, service_key, path):
         return json.loads(body)
 
 
+def supabase_count(supabase_url, service_key, path):
+    """
+    Return the total row count for a query without fetching rows.
+    Uses PostgREST `Prefer: count=exact` + `Range: 0-0` so the response
+    body is a single (or zero) rows but the Content-Range header has the
+    total. Bypasses the 1000-row cap entirely.
+    """
+    url = f"{supabase_url.rstrip('/')}/rest/v1/{path.lstrip('/')}"
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("apikey", service_key)
+    req.add_header("Authorization", f"Bearer {service_key}")
+    req.add_header("Accept", "application/json")
+    req.add_header("Prefer", "count=exact")
+    req.add_header("Range-Unit", "items")
+    req.add_header("Range", "0-0")
+
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        # Content-Range looks like: "0-0/1053" or "*/0" if zero rows
+        cr = resp.headers.get("Content-Range", "*/0")
+        try:
+            return int(cr.split("/")[-1])
+        except (ValueError, IndexError):
+            return 0
+
+
+def supabase_get_paginated(supabase_url, service_key, path, page_size=1000, max_pages=50):
+    """
+    Fetch all rows from a PostgREST query by paginating in `page_size` chunks.
+    Bounded by `max_pages` (default 50 = 50,000 rows max) to avoid infinite loops.
+    Each page uses Range header for pagination. Returns the concatenated list.
+    """
+    url_base = f"{supabase_url.rstrip('/')}/rest/v1/{path.lstrip('/')}"
+    all_rows = []
+
+    for page in range(max_pages):
+        start = page * page_size
+        end = start + page_size - 1
+        req = urllib.request.Request(url_base, method="GET")
+        req.add_header("apikey", service_key)
+        req.add_header("Authorization", f"Bearer {service_key}")
+        req.add_header("Accept", "application/json")
+        req.add_header("Range-Unit", "items")
+        req.add_header("Range", f"{start}-{end}")
+
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            body = resp.read().decode("utf-8")
+            page_rows = json.loads(body) if body else []
+            all_rows.extend(page_rows)
+            if len(page_rows) < page_size:
+                break  # no more rows
+
+    return all_rows
+
+
 def check_auth(h):
     """
     Validate the Authorization header against ADMIN_PASSWORD.
@@ -114,18 +168,17 @@ def handle_summary(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=id&limit=10000")
-        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=id&limit=10000")
-        sales = supabase_get(
-            supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
-        )
+        total_visits = supabase_count(supabase_url, service_key,
+            f"{TABLE_VISITS}?select=id")
+        total_clicks = supabase_count(supabase_url, service_key,
+            f"{TABLE_CLICKS}?select=id")
+        # For sales we still need the amount sum, so fetch with pagination
+        sales = supabase_get_paginated(supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)")
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
 
-    total_visits = len(visits)
-    total_clicks = len(clicks)
     total_sales = len(sales)
     total_revenue = sum(row.get("amount", 0) or 0 for row in sales)
     conversion_rate = round((total_sales / total_visits) * 100, 2) if total_visits else 0
@@ -145,11 +198,11 @@ def handle_by_utm(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=utm_source&limit=10000")
-        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=utm_source&limit=10000")
-        sales = supabase_get(
+        visits = supabase_get_paginated(supabase_url, service_key, f"{TABLE_VISITS}?select=utm_source")
+        clicks = supabase_get_paginated(supabase_url, service_key, f"{TABLE_CLICKS}?select=utm_source")
+        sales = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,amount,ticket_tier&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
+            f"{TABLE_PURCHASES}?select=utm_source,amount,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -207,9 +260,9 @@ def handle_by_tier(h, supabase_url, service_key):
         return
 
     try:
-        sales = supabase_get(
+        sales = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
+            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -249,9 +302,9 @@ def handle_clicks_over_time(h, supabase_url, service_key):
         return
 
     try:
-        clicks = supabase_get(
+        clicks = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}&limit=10000"
+            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -285,9 +338,9 @@ def handle_revenue_by_utm(h, supabase_url, service_key):
     if not check_auth(h):
         return
     try:
-        purchases = supabase_get(
+        purchases = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
+            f"{TABLE_PURCHASES}?select=utm_source,amount&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -308,9 +361,9 @@ def handle_tickets_by_utm_tier(h, supabase_url, service_key):
     if not check_auth(h):
         return
     try:
-        purchases = supabase_get(
+        purchases = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,ticket_tier&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
+            f"{TABLE_PURCHASES}?select=utm_source,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -339,12 +392,12 @@ def handle_conversion_by_utm(h, supabase_url, service_key):
     if not check_auth(h):
         return
     try:
-        visits = supabase_get(supabase_url, service_key,
-            f"{TABLE_VISITS}?select=utm_source&limit=10000")
-        participants = supabase_get(supabase_url, service_key,
-            f"{TABLE_PARTICIPANTS}?select=utm_source&limit=10000")
-        purchases = supabase_get(supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source&payment_status=in.(PAID,FULLY_PAID)&limit=10000")
+        visits = supabase_get_paginated(supabase_url, service_key,
+            f"{TABLE_VISITS}?select=utm_source")
+        participants = supabase_get_paginated(supabase_url, service_key,
+            f"{TABLE_PARTICIPANTS}?select=utm_source")
+        purchases = supabase_get_paginated(supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=utm_source&payment_status=in.(PAID,FULLY_PAID)")
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
@@ -399,6 +452,22 @@ def handle_recent_participants(h, supabase_url, service_key):
             supabase_url, service_key,
             f"{TABLE_PARTICIPANTS}?select=created_at,full_name,email,mobile_number,describes_you,business_type,referred_by"
             f"&order=created_at.desc&limit=50"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+    _send_json(h, 200, rows)
+
+
+def handle_all_participants(h, supabase_url, service_key):
+    """GET /api/report?action=all_participants — full list for CSV export"""
+    if not check_auth(h):
+        return
+    try:
+        rows = supabase_get_paginated(
+            supabase_url, service_key,
+            f"{TABLE_PARTICIPANTS}?select=created_at,full_name,email,mobile_number,describes_you,business_type,referred_by,utm_source,utm_medium,utm_campaign,utm_content"
+            f"&order=created_at.desc"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -481,6 +550,9 @@ class handler(BaseHTTPRequestHandler):
         elif action == "recent_participants":
             handle_recent_participants(self, supabase_url, service_key)
 
+        elif action == "all_participants":
+            handle_all_participants(self, supabase_url, service_key)
+
         elif action == "last_sync":
             handle_last_sync(self, supabase_url, service_key)
 
@@ -490,7 +562,7 @@ class handler(BaseHTTPRequestHandler):
                     f"Unknown action: '{action}'. Valid actions: "
                     "auth, summary, by_utm, by_tier, clicks_over_time, "
                     "revenue_by_utm, tickets_by_utm_tier, conversion_by_utm, "
-                    "recent_payments, recent_participants, last_sync"
+                    "recent_payments, recent_participants, all_participants, last_sync"
                 )
             })
 
