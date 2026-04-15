@@ -12,8 +12,11 @@ Required environment variables on Vercel:
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import re
 import urllib.request
 import urllib.error
+
+EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
 
 ALLOWED_FIELDS = [
@@ -106,6 +109,10 @@ class handler(BaseHTTPRequestHandler):
             if not payload.get(required):
                 _send_json(self, 400, {"error": f"Missing required field: {required}"})
                 return
+
+        if not EMAIL_PATTERN.match(payload["email"]):
+            _send_json(self, 400, {"error": "Invalid email address."})
+            return
 
         # Forward to Apps Script as text/plain to avoid CORS preflight on its side
         forward_body = json.dumps(payload).encode("utf-8")

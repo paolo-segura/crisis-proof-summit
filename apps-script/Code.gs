@@ -1,5 +1,5 @@
 /**
- * Crisis-Proof Summit — Participant Details webhook
+ * Business Unlocked Summit — Participant Details webhook
  *
  * This Google Apps Script receives POSTs from the Vercel serverless
  * function `api/submit-participant.py` and appends a row to the
@@ -74,7 +74,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return _json({ ok: true, message: 'Crisis-Proof Summit participant webhook is live.' });
+  return _json({ ok: true, message: 'Business Unlocked Summit participant webhook is live.' });
 }
 
 function _json(obj) {
