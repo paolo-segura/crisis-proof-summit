@@ -20,5 +20,8 @@
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/sync-payments", "schedule": "*/15 * * * *" }
   ]
 }
