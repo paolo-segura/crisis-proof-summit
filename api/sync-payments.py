@@ -31,11 +31,23 @@ def _send_json(h, status, payload):
 def _is_authorized_cron_request(h):
     """
     Vercel cron sends `Authorization: Bearer <CRON_SECRET>` when CRON_SECRET
-    is set in env vars. If unset, allow — useful for local manual triggers.
+    is set in env vars.
+
+    Locally (VERCEL_ENV unset or 'development'), CRON_SECRET is optional —
+    requests without the header are allowed, useful for manual triggers.
+
+    In production (VERCEL_ENV='production'), CRON_SECRET MUST be set;
+    if missing, every request is rejected to avoid public exposure.
     """
     expected = os.environ.get("CRON_SECRET")
+    is_production = os.environ.get("VERCEL_ENV") == "production"
+
     if not expected:
-        return True
+        if is_production:
+            # Refuse to serve in production without auth — fail closed
+            return False
+        return True  # local/dev bypass
+
     auth = h.headers.get("Authorization", "")
     return auth == f"Bearer {expected}"
 
@@ -58,7 +70,11 @@ class handler(BaseHTTPRequestHandler):
             )
             _send_json(self, 200, result)
         except Exception as exc:  # noqa: BLE001
-            _send_json(self, 500, {"error": f"{type(exc).__name__}: {exc}"})
+            # Log full details server-side (Vercel function logs);
+            # return only a generic message to the caller so internal paths,
+            # env names, and supabase URLs don't leak via the HTTP response.
+            print(f"[sync-payments] error: {type(exc).__name__}: {exc}", flush=True)
+            _send_json(self, 500, {"error": "Sync failed; see server logs."})
 
     def log_message(self, format, *args):
         pass
