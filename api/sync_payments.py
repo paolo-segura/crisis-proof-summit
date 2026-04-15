@@ -37,3 +37,23 @@ def normalize_mobile(raw):
     if len(digits) < 10:
         return ""
     return digits[-10:]
+
+
+def parse_tier(raw_product):
+    """
+    Extract tier from a product label like 'BUSINESS UNLOCKED | VIP'
+    and normalize to the lowercase_underscore form used in the database
+    (matches the ticket_tier values written by the click-logger).
+
+    Examples:
+      'THE NEW BUSINESS NORMAL | VIP' -> 'vip'
+      'FOO | Early Bird'              -> 'early_bird'
+      'FOO | Early  Bird'             -> 'early_bird'  (collapses whitespace)
+      None                            -> ''
+    """
+    if not raw_product:
+        return ""
+    parts = str(raw_product).split("|")
+    raw_tier = parts[-1].strip().lower()
+    # Collapse any run of whitespace to a single underscore
+    return re.sub(r"\s+", "_", raw_tier)
