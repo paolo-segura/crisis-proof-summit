@@ -42,6 +42,7 @@ In Vercel project settings → **Environment Variables**, add:
 | `BRIDGE_SHEET_ID` | The sheet ID from step 1.6 |
 | `BRIDGE_SHEET_TAB` | `payments` |
 | `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON` | The entire contents of the service account JSON file (paste as a single-line string) |
+| `CRON_SECRET` | A long random string (e.g., `openssl rand -hex 32` output). Vercel will inject this into cron requests as `Authorization: Bearer <value>`. The endpoint refuses requests in production without this. |
 
 Existing vars that must also be present: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`.
 

@@ -335,13 +335,8 @@ def supabase_fetch_participants_by_contacts(emails, mobiles):
     else:
         filter_expr = "or=(" + ",".join(clauses) + ")"
 
-    # If the top-level filter is a single clause, use it directly.
-    # If multiple clauses, combine with top-level `or=(...)`.
     select = "id,email,mobile_number,created_at,utm_source,utm_medium,utm_campaign,utm_content"
-    if filter_expr.startswith("or=("):
-        path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
-    else:
-        path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
+    path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
 
     return _supabase_request("GET", path) or []
 

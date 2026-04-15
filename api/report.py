@@ -381,7 +381,7 @@ def handle_recent_payments(h, supabase_url, service_key):
         purchases = supabase_get(
             supabase_url, service_key,
             f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status"
-            f"&payment_status=not.is.null"
+            f"&payment_status=in.(PAID,FULLY_PAID)"
             f"&order=paid_at.desc&limit=50"
         )
     except urllib.error.URLError as exc:
