@@ -122,6 +122,7 @@ async function handleLogin() {
 function showDashboard() {
   loginScreen.style.display = 'none';
   dashboard.style.display = 'block';
+  window.adminAuthed = true;
   window.dispatchEvent(new Event('admin:authed'));
   refreshAll();
   startAutoRefresh();

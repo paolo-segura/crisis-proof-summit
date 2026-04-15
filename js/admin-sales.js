@@ -77,6 +77,16 @@
     var data = await window.apiFetch('revenue_by_utm');
     var canvas = document.getElementById('chart-revenue-utm');
     if (!canvas) return;
+    if (!Array.isArray(data) || data.length === 0) {
+      if (revenueChart) { revenueChart.destroy(); revenueChart = null; }
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data yet', canvas.width / 2, canvas.height / 2);
+      return;
+    }
     var ctx = canvas.getContext('2d');
     var labels = data.map(function (r) { return r.utm_source; });
     var values = data.map(function (r) { return r.revenue; });
@@ -99,6 +109,16 @@
     var data = await window.apiFetch('tickets_by_utm_tier');
     var canvas = document.getElementById('chart-tickets-utm-tier');
     if (!canvas) return;
+    if (!Array.isArray(data) || data.length === 0) {
+      if (ticketsChart) { ticketsChart.destroy(); ticketsChart = null; }
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data yet', canvas.width / 2, canvas.height / 2);
+      return;
+    }
     var ctx = canvas.getContext('2d');
     var labels = data.map(function (r) { return r.utm_source; });
     if (ticketsChart) ticketsChart.destroy();
@@ -124,6 +144,16 @@
     var data = await window.apiFetch('conversion_by_utm');
     var canvas = document.getElementById('chart-conversion-utm');
     if (!canvas) return;
+    if (!Array.isArray(data) || data.length === 0) {
+      if (conversionChart) { conversionChart.destroy(); conversionChart = null; }
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data yet', canvas.width / 2, canvas.height / 2);
+      return;
+    }
     var ctx = canvas.getContext('2d');
     var labels = data.map(function (r) { return r.utm_source; });
     if (conversionChart) conversionChart.destroy();
@@ -180,7 +210,12 @@
   // Run after admin.js authenticates (it dispatches 'admin:authed' on success).
   // Fallback: also try after DOMContentLoaded + 3s in case admin.js doesn't fire it.
   var ran = false;
-  function runOnce() { if (!ran) { ran = true; loadAll(); } }
+  function runOnce() {
+    if (!ran && window.adminAuthed) {
+      ran = true;
+      loadAll();
+    }
+  }
 
   window.addEventListener('admin:authed', runOnce);
   window.addEventListener('DOMContentLoaded', function () { setTimeout(runOnce, 3000); });
