@@ -61,3 +61,69 @@ def test_parse_tier_strips_whitespace():
 def test_parse_tier_double_spaces_collapse_to_single_underscore():
     # "Early  Bird" (double space) should still normalize to early_bird, not early__bird
     assert sp.parse_tier("FOO | Early  Bird") == "early_bird"
+
+
+# ---------- parse_row ----------
+
+SAMPLE_ROW = [
+    "purchase.success",
+    "success",
+    "Wynes Ramos",
+    "wyne_ramos@yahoo.com",
+    "639178334375",
+    "THE NEW BUSINESS NORMAL | VIP",
+    "4999.98",
+    "1",
+    "4999.98",
+    "TXN-1775957887846-u6p9pzf4x",
+    "TXN-1775957887846-u6p9pzf4x",
+    "69daf781fc29a42382638a1f",
+    "xendit",
+    "full",
+    "FULLY_PAID",
+    "2026-04-12T01:39:45.555Z",
+    "PAID",
+]
+
+def test_parse_row_full_sample():
+    result = sp.parse_row(SAMPLE_ROW)
+    assert result["order_id"] == "TXN-1775957887846-u6p9pzf4x"
+    assert result["email"] == "wyne_ramos@yahoo.com"
+    assert result["mobile"] == "9178334375"
+    assert result["full_name"] == "Wynes Ramos"
+    assert result["ticket_tier"] == "vip"
+    assert result["amount"] == 4999.98
+    assert result["quantity"] == 1
+    assert result["total"] == 4999.98
+    assert result["payment_provider"] == "xendit"
+    assert result["payment_status"] == "FULLY_PAID"
+    assert result["paid_at"] == "2026-04-12T01:39:45.555Z"
+    assert result["raw_row"] == SAMPLE_ROW
+
+def test_parse_row_short_row_returns_none():
+    # Defensive: if Scale Your Org changes schema, skip instead of crashing
+    assert sp.parse_row(["only", "three", "cols"]) is None
+
+def test_parse_row_missing_order_id_returns_none():
+    row = list(SAMPLE_ROW)
+    row[9] = ""
+    assert sp.parse_row(row) is None
+
+def test_parse_row_bad_amount_defaults_to_zero():
+    row = list(SAMPLE_ROW)
+    row[6] = "not-a-number"
+    row[7] = ""
+    row[8] = ""
+    result = sp.parse_row(row)
+    assert result["amount"] == 0.0
+    assert result["quantity"] == 0
+    assert result["total"] == 0.0
+
+def test_parse_row_normalizes_email_and_mobile():
+    # Even if Scale Your Org sends mixed-case email or different mobile format
+    row = list(SAMPLE_ROW)
+    row[3] = "  Wyne_Ramos@Yahoo.COM "
+    row[4] = "+63 917 833 4375"
+    result = sp.parse_row(row)
+    assert result["email"] == "wyne_ramos@yahoo.com"
+    assert result["mobile"] == "9178334375"
