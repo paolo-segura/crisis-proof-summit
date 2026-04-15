@@ -194,11 +194,44 @@
     });
   }
 
+  async function loadParticipants() {
+    try {
+      return await window.apiFetch('recent_participants') || [];
+    } catch (err) {
+      console.error('[admin-sales] participants fetch failed', err);
+      return [];
+    }
+  }
+
+  function renderParticipantsTable(rows) {
+    var tbody = document.querySelector('#table-recent-participants tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px;">No participant submissions yet.</td></tr>';
+      return;
+    }
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + (r.created_at ? new Date(r.created_at).toLocaleString('en-PH') : '') + '</td>' +
+        '<td>' + escapeHtml(r.full_name) + '</td>' +
+        '<td>' + escapeHtml(r.email) + '</td>' +
+        '<td>' + escapeHtml(r.mobile_number) + '</td>' +
+        '<td>' + escapeHtml(r.describes_you) + '</td>' +
+        '<td>' + escapeHtml(r.business_type) + '</td>' +
+        '<td>' + escapeHtml(r.referred_by) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
   async function loadAll() {
     try {
       await loadSyncStatus();
       var recent = await loadKPIs();
       renderPaymentsTable(recent);
+      var participants = await loadParticipants();
+      renderParticipantsTable(participants);
       await drawRevenueChart();
       await drawTicketsChart();
       await drawConversionChart();

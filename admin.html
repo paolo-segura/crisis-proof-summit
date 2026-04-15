@@ -619,6 +619,7 @@
     }
     #sales-attribution .chart-cell h3 { color: var(--text-muted); }
     #sales-attribution .recent-payments h3 { color: var(--text-muted); }
+    #sales-attribution .recent-participants h3 { color: var(--text-muted); }
     #sales-attribution .table-wrap {
       border-color: rgba(255,255,255,0.08);
     }
@@ -693,22 +694,6 @@
         </div>
       </div>
 
-      <!-- Charts -->
-      <div class="chart-grid">
-        <div class="chart-cell">
-          <h3>Revenue by UTM source</h3>
-          <canvas id="chart-revenue-utm" height="220"></canvas>
-        </div>
-        <div class="chart-cell">
-          <h3>Tickets by UTM source × tier</h3>
-          <canvas id="chart-tickets-utm-tier" height="220"></canvas>
-        </div>
-        <div class="chart-cell full-width">
-          <h3>Conversion funnel by UTM source</h3>
-          <canvas id="chart-conversion-utm" height="260"></canvas>
-        </div>
-      </div>
-
       <!-- Recent payments -->
       <div class="recent-payments">
         <h3>Recent payments</h3>
@@ -728,6 +713,43 @@
             </thead>
             <tbody><!-- rows inserted by admin-sales.js --></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Recent Participant Details -->
+      <div class="recent-participants">
+        <h3>Recent Participant Details</h3>
+        <div class="table-wrap">
+          <table id="table-recent-participants">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Mobile</th>
+                <th>Role</th>
+                <th>Business Type</th>
+                <th>Referred By</th>
+              </tr>
+            </thead>
+            <tbody><!-- rows inserted by admin-sales.js --></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-grid">
+        <div class="chart-cell">
+          <h3>Revenue by UTM source</h3>
+          <canvas id="chart-revenue-utm" height="160"></canvas>
+        </div>
+        <div class="chart-cell">
+          <h3>Tickets by UTM source × tier</h3>
+          <canvas id="chart-tickets-utm-tier" height="160"></canvas>
+        </div>
+        <div class="chart-cell full-width">
+          <h3>Conversion funnel by UTM source</h3>
+          <canvas id="chart-conversion-utm" height="180"></canvas>
         </div>
       </div>
     </section>

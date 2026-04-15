@@ -2363,10 +2363,10 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  padding: 16px;
+  padding: 12px;
 }
 .chart-cell.full-width { grid-column: 1 / -1; }
-.chart-cell h3 { margin: 0 0 12px; font-size: 14px; color: #374151; }
+.chart-cell h3 { margin: 0 0 8px; font-size: 13px; color: #374151; }
 
 .recent-payments { margin-top: 24px; }
 .recent-payments h3 { font-size: 14px; color: #374151; margin: 0 0 8px; }
@@ -2402,6 +2402,9 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   font-weight: 600;
 }
 .sales-link-banner a:hover { filter: brightness(0.95); }
+
+.recent-participants { margin-top: 24px; margin-bottom: 24px; }
+.recent-participants h3 { font-size: 14px; color: #374151; margin: 0 0 8px; }
 
 @media (max-width: 768px) {
   .chart-grid { grid-template-columns: 1fr; }

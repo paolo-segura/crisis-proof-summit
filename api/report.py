@@ -114,11 +114,11 @@ def handle_summary(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=id")
-        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=id")
+        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=id&limit=10000")
+        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=id&limit=10000")
         sales = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -145,11 +145,11 @@ def handle_by_utm(h, supabase_url, service_key):
         return
 
     try:
-        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=utm_source")
-        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=utm_source")
+        visits = supabase_get(supabase_url, service_key, f"{TABLE_VISITS}?select=utm_source&limit=10000")
+        clicks = supabase_get(supabase_url, service_key, f"{TABLE_CLICKS}?select=utm_source&limit=10000")
         sales = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,amount,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=utm_source,amount,ticket_tier&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -209,7 +209,7 @@ def handle_by_tier(h, supabase_url, service_key):
     try:
         sales = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -251,7 +251,7 @@ def handle_clicks_over_time(h, supabase_url, service_key):
     try:
         clicks = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}"
+            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -287,7 +287,7 @@ def handle_revenue_by_utm(h, supabase_url, service_key):
     try:
         purchases = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,amount&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=utm_source,amount&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -310,7 +310,7 @@ def handle_tickets_by_utm_tier(h, supabase_url, service_key):
     try:
         purchases = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source,ticket_tier&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=utm_source,ticket_tier&payment_status=in.(PAID,FULLY_PAID)&limit=10000"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -340,11 +340,11 @@ def handle_conversion_by_utm(h, supabase_url, service_key):
         return
     try:
         visits = supabase_get(supabase_url, service_key,
-            f"{TABLE_VISITS}?select=utm_source")
+            f"{TABLE_VISITS}?select=utm_source&limit=10000")
         participants = supabase_get(supabase_url, service_key,
-            f"{TABLE_PARTICIPANTS}?select=utm_source")
+            f"{TABLE_PARTICIPANTS}?select=utm_source&limit=10000")
         purchases = supabase_get(supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=utm_source&payment_status=in.(PAID,FULLY_PAID)")
+            f"{TABLE_PURCHASES}?select=utm_source&payment_status=in.(PAID,FULLY_PAID)&limit=10000")
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
@@ -388,6 +388,22 @@ def handle_recent_payments(h, supabase_url, service_key):
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
     _send_json(h, 200, purchases)
+
+
+def handle_recent_participants(h, supabase_url, service_key):
+    """GET /api/report?action=recent_participants — last 50 form submissions"""
+    if not check_auth(h):
+        return
+    try:
+        rows = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_PARTICIPANTS}?select=created_at,full_name,email,mobile_number,describes_you,business_type,referred_by"
+            f"&order=created_at.desc&limit=50"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+    _send_json(h, 200, rows)
 
 
 def handle_last_sync(h, supabase_url, service_key):
@@ -462,6 +478,9 @@ class handler(BaseHTTPRequestHandler):
         elif action == "recent_payments":
             handle_recent_payments(self, supabase_url, service_key)
 
+        elif action == "recent_participants":
+            handle_recent_participants(self, supabase_url, service_key)
+
         elif action == "last_sync":
             handle_last_sync(self, supabase_url, service_key)
 
@@ -471,7 +490,7 @@ class handler(BaseHTTPRequestHandler):
                     f"Unknown action: '{action}'. Valid actions: "
                     "auth, summary, by_utm, by_tier, clicks_over_time, "
                     "revenue_by_utm, tickets_by_utm_tier, conversion_by_utm, "
-                    "recent_payments, last_sync"
+                    "recent_payments, recent_participants, last_sync"
                 )
             })
 
