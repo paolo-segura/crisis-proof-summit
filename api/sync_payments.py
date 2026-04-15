@@ -11,6 +11,8 @@ Every 15 minutes (triggered via Vercel cron from api/sync-payments.py):
 Protected by CRON_SECRET header (enforced in the Vercel handler).
 """
 
+import json
+import os
 import re
 
 
@@ -219,5 +221,3 @@ def read_bridge_sheet():
     ).execute()
 
     return result.get("values", [])
-
-    return None, "direct"
