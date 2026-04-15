@@ -127,3 +127,98 @@ def test_parse_row_normalizes_email_and_mobile():
     result = sp.parse_row(row)
     assert result["email"] == "wyne_ramos@yahoo.com"
     assert result["mobile"] == "9178334375"
+
+
+# ---------- match_purchase_to_participant ----------
+
+PAID_AT = "2026-04-12T10:00:00Z"
+
+def _pt(pid, email="", mobile="", created_at="", utm_source=None):
+    """Build a participant dict for matcher tests (uses real DB field names)."""
+    return {
+        "id": pid,
+        "email": email,
+        "mobile_number": mobile,
+        "created_at": created_at,
+        "utm_source": utm_source,
+        "utm_medium": None,
+        "utm_campaign": None,
+        "utm_content": None,
+    }
+
+def test_match_by_email():
+    participants = [
+        _pt("p1", email="wyne_ramos@yahoo.com", created_at="2026-04-11T12:00:00Z", utm_source="pancake"),
+    ]
+    pid, method = sp.match_purchase_to_participant(
+        {"email": "wyne_ramos@yahoo.com", "mobile": "9178334375", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid == "p1"
+    assert method == "email"
+
+def test_match_falls_back_to_mobile():
+    participants = [
+        _pt("p1", email="different@example.com", mobile="9178334375",
+            created_at="2026-04-11T12:00:00Z", utm_source="rtd"),
+    ]
+    pid, method = sp.match_purchase_to_participant(
+        {"email": "wyne_ramos@yahoo.com", "mobile": "9178334375", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid == "p1"
+    assert method == "mobile"
+
+def test_match_no_match_returns_direct():
+    participants = [
+        _pt("p1", email="someone-else@example.com", mobile="9000000000",
+            created_at="2026-04-11T12:00:00Z"),
+    ]
+    pid, method = sp.match_purchase_to_participant(
+        {"email": "wyne_ramos@yahoo.com", "mobile": "9178334375", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid is None
+    assert method == "direct"
+
+def test_match_multiple_picks_most_recent_before_payment():
+    participants = [
+        _pt("p_old", email="x@example.com", created_at="2026-04-05T12:00:00Z", utm_source="old"),
+        _pt("p_new", email="x@example.com", created_at="2026-04-11T12:00:00Z", utm_source="new"),
+    ]
+    pid, _ = sp.match_purchase_to_participant(
+        {"email": "x@example.com", "mobile": "", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid == "p_new"
+
+def test_match_all_after_payment_picks_most_recent_overall():
+    # Paid first, form later scenario
+    participants = [
+        _pt("p1", email="x@example.com", created_at="2026-04-13T09:00:00Z", utm_source="late"),
+        _pt("p2", email="x@example.com", created_at="2026-04-14T09:00:00Z", utm_source="later"),
+    ]
+    pid, _ = sp.match_purchase_to_participant(
+        {"email": "x@example.com", "mobile": "", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid == "p2"
+
+def test_match_empty_email_and_mobile_returns_direct():
+    pid, method = sp.match_purchase_to_participant(
+        {"email": "", "mobile": "", "paid_at": PAID_AT}, []
+    )
+    assert pid is None
+    assert method == "direct"
+
+def test_match_handles_participants_with_missing_fields():
+    # Defensive: a participant row without created_at shouldn't crash
+    participants = [
+        {"id": "p1", "email": "x@example.com", "mobile_number": "", "created_at": None},
+    ]
+    pid, method = sp.match_purchase_to_participant(
+        {"email": "x@example.com", "mobile": "", "paid_at": PAID_AT},
+        participants,
+    )
+    assert pid == "p1"
+    assert method == "email"

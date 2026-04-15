@@ -121,3 +121,52 @@ def parse_row(row):
         "paid_at":          str(row[_COL_PAID_AT]).strip() if row[_COL_PAID_AT] else None,
         "raw_row":          list(row),
     }
+
+
+# ---------------------------------------------------------------------------
+# Participant matcher
+# ---------------------------------------------------------------------------
+
+def _pick_best_candidate(candidates, paid_at):
+    """
+    Given a list of participant dicts that all match on email or mobile,
+    prefer the most recent created_at < paid_at.
+    If all were created AFTER paid_at, return the most recent overall.
+    Handles None created_at defensively.
+    """
+    if not candidates:
+        return None
+
+    def key(p):
+        return p.get("created_at") or ""
+
+    before = [p for p in candidates if paid_at and key(p) and key(p) < paid_at]
+    pool = before if before else candidates
+    return max(pool, key=key)
+
+
+def match_purchase_to_participant(purchase, participants):
+    """
+    Returns (participant_id, match_method) where match_method is
+    'email', 'mobile', or 'direct'.
+
+    `participants` is a list of dicts (already fetched from Supabase) containing
+    at minimum: id, email, mobile_number, created_at.
+    """
+    email = purchase.get("email") or ""
+    mobile = purchase.get("mobile") or ""
+    paid_at = purchase.get("paid_at") or ""
+
+    if email:
+        hits = [p for p in participants if normalize_email(p.get("email")) == email]
+        chosen = _pick_best_candidate(hits, paid_at)
+        if chosen:
+            return chosen["id"], "email"
+
+    if mobile:
+        hits = [p for p in participants if normalize_mobile(p.get("mobile_number")) == mobile]
+        chosen = _pick_best_candidate(hits, paid_at)
+        if chosen:
+            return chosen["id"], "mobile"
+
+    return None, "direct"
