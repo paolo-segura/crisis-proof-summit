@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '4090713851145938');
+  fbq('init', '2039173604147623');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=4090713851145938&ev=PageView&noscript=1"/></noscript>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2039173604147623&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->
+
   <title>Thank You — BUSINESS UNLOCKED</title>
   <link rel="icon" type="image/png" href="/assets/images/exu-logo-favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -130,6 +142,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
+  <script src="/js/pixel-events.js"></script>
   <script>
     // Log a purchase when scaleyourorg.net redirects back here.
     // Expected query params (best-effort — whatever scaleyourorg.net passes through):
@@ -141,6 +154,16 @@
       var orderId = params.get('order_id') || params.get('transaction_id') || params.get('id') || null;
       var amount = params.get('amount') || params.get('total') || null;
       var email = params.get('email') || null;
+
+      // Meta Pixel — Purchase event
+      if (typeof fbq === 'function') {
+        fbq('track', 'Purchase', {
+          value: amount ? parseFloat(amount) : 0,
+          currency: 'PHP',
+          content_name: tier || 'Business Unlocked Ticket',
+          content_category: 'event-ticket',
+        });
+      }
 
       // Fall back to localStorage for session/utm if provider stripped them
       var storedSession = localStorage.getItem('nbn_session_id');
