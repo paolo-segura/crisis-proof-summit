@@ -62,25 +62,36 @@ def parse_tier(raw_product):
 
 
 # ---------------------------------------------------------------------------
-# Row parser
+# Row parser (header-based — resilient to Scale Your Org column changes)
 # ---------------------------------------------------------------------------
 
-# Column indexes for Scale Your Org row layout.
-# Documented in docs/sync-setup.md. Changes here must also update SAMPLE_ROW
-# in tests/test_sync_payments.py.
-_COL_EVENT_STATUS = 0   # "purchase.pending" / "purchase.success" — used to skip header + non-purchase rows
-_COL_FULL_NAME = 2
-_COL_EMAIL = 3
-_COL_MOBILE = 4
-_COL_PRODUCT = 5
-_COL_AMOUNT = 6
-_COL_QUANTITY = 7
-_COL_TOTAL = 8
-_COL_ORDER_ID = 9
-_COL_PROVIDER = 12
-_COL_PAYMENT_STATUS = 16  # real order status (PENDING / PAID). Col 14 is a Xendit amount-mode flag that's always "FULLY_PAID".
-_COL_PAID_AT = 15
-_MIN_COLS = 17
+# Canonical field → accepted header names (normalized: lowercased, trimmed,
+# underscores → spaces). Scale Your Org has a history of renaming, reordering,
+# and inserting columns mid-sheet (see the 'UTM SOURSE' typo they inserted at
+# col 9 on 2026-04-17). Matching by header name instead of fixed index keeps
+# us immune to their next surprise.
+_COL_ALIASES = {
+    "event_status":   ["event status"],
+    "full_name":      ["full name"],
+    "email":          ["email"],
+    "mobile":         ["phone number", "phone", "mobile", "mobile number"],
+    "product":        ["product name", "product"],
+    "amount":         ["iterm pric", "item price", "price", "amount"],
+    "quantity":       ["quantity"],
+    "total":          ["total price", "total"],
+    "order_id":       ["reference number", "transaction number", "order id"],
+    "payment_status": ["status"],               # "later occurrence wins" handles the two-Status-columns case
+    "paid_at":        ["paid at"],
+    "utm_source":     ["utm source", "utm sourse"],   # catches their current typo
+    "utm_medium":     ["utm medium"],
+    "utm_campaign":   ["utm campaign"],
+    "utm_content":    ["utm content"],
+    "session_id":     ["bu session id", "session id", "nbn session id"],
+}
+
+# Essential columns — if any are missing from the header, we refuse to
+# process the sheet instead of silently skipping every row.
+_REQUIRED_COLS = ("event_status", "email", "order_id")
 
 # Business Unlocked ticket tiers. Rows for other products (e.g. "Emerge Book")
 # share the same Xendit gateway but belong to a different dashboard, so we skip them.
@@ -101,45 +112,96 @@ def _safe_int(val):
         return 0
 
 
-def parse_row(row):
+def _normalize_header(name):
+    """Lowercase, trim, collapse whitespace, underscore → space."""
+    if name is None:
+        return ""
+    s = str(name).strip().lower().replace("_", " ")
+    return re.sub(r"\s+", " ", s)
+
+
+def build_col_map(header_row):
+    """Resolve canonical field → column index from the sheet's header row.
+
+    When the sheet has two columns with the same normalized name (the BU bridge
+    sheet has two 'Status' columns — col 1 mirrors the event prefix, col 17 is
+    the real order state), the later index wins. That's intentional: the real
+    order status is what we want for payment_status.
     """
-    Parse one Scale Your Org row into a purchase dict keyed for the
-    new_business_normal_purchases table.
+    if not header_row:
+        return {}
+    name_to_idx = {}
+    for i, raw in enumerate(header_row):
+        key = _normalize_header(raw)
+        if key:
+            name_to_idx[key] = i  # later wins for duplicates
+    resolved = {}
+    for canonical, aliases in _COL_ALIASES.items():
+        for alias in aliases:
+            if alias in name_to_idx:
+                resolved[canonical] = name_to_idx[alias]
+                break
+    return resolved
+
+
+def _cell(row, col_map, key, default=""):
+    """Read a cell by canonical key; returns default when the column is missing
+    or the row is shorter than the header (trailing-empties truncation)."""
+    idx = col_map.get(key)
+    if idx is None or idx >= len(row):
+        return default
+    val = row[idx]
+    return default if val is None else val
+
+
+def parse_row(row, col_map):
+    """Parse one data row into a purchase dict using `col_map` from build_col_map.
 
     Returns None if the row:
-      - is too short (sheet header/blank rows)
-      - isn't a `purchase.*` event (skips the literal header row whose col 0 is "Event Status")
+      - is empty
+      - isn't a `purchase.*` event (handles blank rows / non-purchase events)
       - has no order_id
-      - is for a non-BU product (the gateway is shared with other clients; we only
-        ingest Business Unlocked tiers into this table)
+      - is for a non-BU product (Emerge Book / test products share the gateway)
     """
-    if not row or len(row) < _MIN_COLS:
+    if not row:
         return None
 
-    event = str(row[_COL_EVENT_STATUS]).strip().lower() if row[_COL_EVENT_STATUS] else ""
+    event = _normalize_header(_cell(row, col_map, "event_status"))
     if not event.startswith("purchase."):
         return None
 
-    order_id = str(row[_COL_ORDER_ID]).strip() if row[_COL_ORDER_ID] else ""
+    order_id = str(_cell(row, col_map, "order_id")).strip()
     if not order_id:
         return None
 
-    ticket_tier = parse_tier(row[_COL_PRODUCT])
+    ticket_tier = parse_tier(_cell(row, col_map, "product"))
     if ticket_tier not in _BU_TIERS:
         return None
 
+    def _opt(key):
+        """Return stripped non-empty string or None — for optional UTM/session fields."""
+        v = str(_cell(row, col_map, key)).strip()
+        return v if v else None
+
+    paid_at_raw = str(_cell(row, col_map, "paid_at")).strip()
+
     return {
         "order_id":         order_id,
-        "full_name":        str(row[_COL_FULL_NAME]).strip() if row[_COL_FULL_NAME] else "",
-        "email":            normalize_email(row[_COL_EMAIL]),
-        "mobile":           normalize_mobile(row[_COL_MOBILE]),
+        "full_name":        str(_cell(row, col_map, "full_name")).strip(),
+        "email":            normalize_email(_cell(row, col_map, "email")),
+        "mobile":           normalize_mobile(_cell(row, col_map, "mobile")),
         "ticket_tier":      ticket_tier,
-        "amount":           _safe_float(row[_COL_AMOUNT]),
-        "quantity":         _safe_int(row[_COL_QUANTITY]),
-        "total":            _safe_float(row[_COL_TOTAL]),
-        "payment_provider": str(row[_COL_PROVIDER]).strip().lower() if row[_COL_PROVIDER] else "",
-        "payment_status":   str(row[_COL_PAYMENT_STATUS]).strip().upper() if row[_COL_PAYMENT_STATUS] else "",
-        "paid_at":          str(row[_COL_PAID_AT]).strip() if row[_COL_PAID_AT] else None,
+        "amount":           _safe_float(_cell(row, col_map, "amount")),
+        "quantity":         _safe_int(_cell(row, col_map, "quantity")),
+        "total":            _safe_float(_cell(row, col_map, "total")),
+        "payment_provider": "",   # no dedicated header in current Scale Your Org layout
+        "payment_status":   str(_cell(row, col_map, "payment_status")).strip().upper(),
+        "paid_at":          paid_at_raw if paid_at_raw else None,
+        "session_id":       _opt("session_id"),
+        "utm_source":       _opt("utm_source"),
+        "utm_medium":       _opt("utm_medium"),
+        "utm_campaign":     _opt("utm_campaign"),
+        "utm_content":      _opt("utm_content"),
         "raw_row":          list(row),
     }
 
@@ -169,14 +231,26 @@ def _pick_best_candidate(candidates, paid_at):
 def match_purchase_to_participant(purchase, participants):
     """
     Returns (participant_id, match_method) where match_method is
-    'email', 'mobile', or 'direct'.
+    'session_id', 'email', 'mobile', or 'direct'.
 
-    `participants` is a list of dicts (already fetched from Supabase) containing
-    at minimum: id, email, mobile_number, created_at.
+    Match priority is session_id → email → mobile, then 'direct' if none hit.
+    session_id is the strongest signal (unique per browser, set before form
+    submit), so we check it first. It's populated on the purchase when Scale
+    Your Org forwards our checkout query param into the Bridge Sheet.
+
+    `participants` is a list of dicts containing at minimum:
+    id, email, mobile_number, session_id, created_at.
     """
+    session_id = purchase.get("session_id") or ""
     email = purchase.get("email") or ""
     mobile = purchase.get("mobile") or ""
     paid_at = purchase.get("paid_at") or ""
+
+    if session_id:
+        hits = [p for p in participants if p.get("session_id") == session_id]
+        chosen = _pick_best_candidate(hits, paid_at)
+        if chosen:
+            return chosen["id"], "session_id"
 
     if email:
         hits = [p for p in participants if normalize_email(p.get("email")) == email]
@@ -342,17 +416,17 @@ def supabase_upsert_purchase(purchase, participant_id, match_method, utm_fields)
     )
 
 
-def supabase_fetch_participants_by_contacts(emails, mobiles):
+def supabase_fetch_participants_by_contacts(emails, mobiles, session_ids=None):
     """
-    Fetch participants whose email is in `emails` OR whose mobile_number matches
-    any of `mobiles`. Both args are sets of normalized strings.
+    Fetch participants whose email is in `emails` OR mobile_number matches any
+    of `mobiles` OR session_id is in `session_ids`. All args are sets (or None).
 
-    Mobile matching is tricky: participants.mobile_number is stored in raw form
-    (e.g. '+639178334375', '09178334375'). We overfetch candidates by using
-    ilike *{last_10_digits}*, then the caller (matcher) re-normalizes via
-    normalize_mobile to get an exact match.
+    Mobile matching: participants.mobile_number is stored raw (e.g. '+639178334375',
+    '09178334375'). We overfetch candidates by using ilike *{last_10_digits}*,
+    then the caller (matcher) re-normalizes via normalize_mobile to get an exact
+    match.
     """
-    if not emails and not mobiles:
+    if not emails and not mobiles and not session_ids:
         return []
 
     clauses = []
@@ -366,13 +440,16 @@ def supabase_fetch_participants_by_contacts(emails, mobiles):
         clauses.append(f"or({mobile_clauses})") if len(mobiles) > 1 else clauses.append(
             f"mobile_number.ilike.*{next(iter(mobiles))}*"
         )
+    if session_ids:
+        quoted = ",".join(f"\"{s}\"" for s in session_ids)
+        clauses.append(f"session_id.in.({quoted})")
 
     if len(clauses) == 1:
         filter_expr = clauses[0]
     else:
         filter_expr = "or=(" + ",".join(clauses) + ")"
 
-    select = "id,email,mobile_number,created_at,utm_source,utm_medium,utm_campaign,utm_content"
+    select = "id,email,mobile_number,session_id,created_at,utm_source,utm_medium,utm_campaign,utm_content"
     path = f"{PARTICIPANTS_TABLE}?select={select}&{filter_expr}"
 
     return _supabase_request("GET", path) or []
@@ -431,11 +508,31 @@ def _iso_now():
 
 
 def _utm_from_participant(p):
+    """Legacy helper — still used by the rematch path where only participant UTM
+    is available (unmatched purchases re-read from DB don't carry sheet UTM)."""
     return {
         "utm_source":   p.get("utm_source"),
         "utm_medium":   p.get("utm_medium"),
         "utm_campaign": p.get("utm_campaign"),
         "utm_content":  p.get("utm_content"),
+    }
+
+
+def _resolve_utm(purchase, participant):
+    """Pick UTM for the upsert. Sheet-side UTM (on the purchase dict) wins —
+    it's the attribution at the moment of payment. Participant UTM is fallback
+    for any field the sheet doesn't provide.
+    """
+    def pick(key):
+        pv = purchase.get(key)
+        if pv:
+            return pv
+        return participant.get(key) if participant else None
+    return {
+        "utm_source":   pick("utm_source"),
+        "utm_medium":   pick("utm_medium"),
+        "utm_campaign": pick("utm_campaign"),
+        "utm_content":  pick("utm_content"),
     }
 
 
@@ -458,6 +555,9 @@ def run_sync(
     """
     Execute one sync cycle. All I/O is injected so this is unit-testable.
     Returns a dict with counts + success flag. Also writes an audit log row.
+
+    The first row of `read_rows()` output is treated as the sheet header and
+    used to build a column-name → index map. Data rows start at row[1:].
     """
     started_at = _iso_now()
     errors = []
@@ -471,30 +571,43 @@ def run_sync(
         raw_rows = read_rows()
         rows_read = len(raw_rows)
 
+        header = raw_rows[0] if raw_rows else []
+        col_map = build_col_map(header)
+        missing = [k for k in _REQUIRED_COLS if k not in col_map]
         parsed = []
-        for r in raw_rows:
-            try:
-                purchase = parse_row(r)
-                if purchase is not None:
-                    parsed.append(purchase)
-            except Exception as exc:  # noqa: BLE001
-                errors.append({"phase": "parse", "error": str(exc), "row_preview": str(r)[:120]})
+        if missing:
+            errors.append({
+                "phase": "header",
+                "error": f"Sheet missing required columns: {missing}",
+                "header_preview": str(header)[:300],
+            })
+        else:
+            for r in raw_rows[1:]:
+                try:
+                    purchase = parse_row(r, col_map)
+                    if purchase is not None:
+                        parsed.append(purchase)
+                except Exception as exc:  # noqa: BLE001
+                    errors.append({"phase": "parse", "error": str(exc), "row_preview": str(r)[:120]})
 
         # ---- Phase 2: batch fetch candidate participants ----
         emails = {p["email"] for p in parsed if p["email"]}
         mobiles = {p["mobile"] for p in parsed if p["mobile"]}
-        participants = fetch_participants(emails, mobiles) if (emails or mobiles) else []
+        session_ids = {p["session_id"] for p in parsed if p.get("session_id")}
+        participants = (
+            fetch_participants(emails, mobiles, session_ids)
+            if (emails or mobiles or session_ids) else []
+        )
 
         # ---- Phase 3: match + upsert each purchase ----
         for purchase in parsed:
             try:
                 pid, method = match_purchase_to_participant(purchase, participants)
+                matched_p = None
                 if pid:
                     matched_p = next(p for p in participants if p["id"] == pid)
-                    utm = _utm_from_participant(matched_p)
                     rows_matched += 1
-                else:
-                    utm = dict(_EMPTY_UTM)
+                utm = _resolve_utm(purchase, matched_p)
                 upsert(purchase, pid, method, utm)
                 rows_upserted += 1
                 if not pid:
@@ -507,6 +620,9 @@ def run_sync(
                 })
 
         # ---- Phase 4: re-match older unmatched purchases ----
+        # Note: unmatched rows re-read from DB don't carry session_id, so we
+        # fall back to email/mobile here. session_id match already happened on
+        # the initial sync for any row that had it.
         unmatched = fetch_unmatched(days=7)
         if unmatched:
             r_emails = {u.get("email") for u in unmatched if u.get("email")}
