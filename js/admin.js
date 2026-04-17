@@ -59,20 +59,23 @@ function now() {
 // ─── API HELPERS ─────────────────────────────────────────────────────────────
 async function apiFetch(action) {
   const url = `${API_BASE}?action=${action}`;
-  const res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${password}` }
-  });
+  const headers = { 'Authorization': `Bearer ${password}` };
 
-  if (res.status === 401) {
-    showInlineError('Session expired. Please log out and log back in.');
-    throw new Error('Unauthorized');
+  // Retry once on 5xx — Vercel serverless cold-starts occasionally return 502
+  // when 10+ parallel dashboard requests race. One retry after 400ms clears it.
+  let res;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    res = await fetch(url, { headers });
+    if (res.status === 401) {
+      showInlineError('Session expired. Please log out and log back in.');
+      throw new Error('Unauthorized');
+    }
+    if (res.ok) return res.json();
+    if (res.status < 500 || attempt === 1) break;
+    await new Promise(r => setTimeout(r, 400));
   }
 
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status}`);
-  }
-
-  return res.json();
+  throw new Error(`API error: ${res.status}`);
 }
 
 // Expose apiFetch globally so admin-sales.js can use it after auth.

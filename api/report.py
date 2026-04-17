@@ -444,14 +444,18 @@ def handle_recent_payments(h, supabase_url, service_key):
 
 
 def handle_recent_participants(h, supabase_url, service_key):
-    """GET /api/report?action=recent_participants — last 50 form submissions"""
+    """GET /api/report?action=recent_participants — last 10 form submissions
+
+    Capped at 10 so the dashboard stays compact; the 'Download CSV (all)' button
+    hits `all_participants` (unbounded) when the full list is needed.
+    """
     if not check_auth(h):
         return
     try:
         rows = supabase_get(
             supabase_url, service_key,
             f"{TABLE_PARTICIPANTS}?select=created_at,full_name,email,mobile_number,describes_you,business_type,referred_by"
-            f"&order=created_at.desc&limit=50"
+            f"&order=created_at.desc&limit=10"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
