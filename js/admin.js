@@ -381,25 +381,32 @@ function renderChart(rows) {
 }
 
 // ─── REFRESH ALL ─────────────────────────────────────────────────────────────
+// Each section fetches independently via Promise.allSettled. A transient 5xx
+// on one endpoint (e.g. a Vercel cold-start on fetchByUTM) no longer hides
+// the three sections that loaded fine. The banner only appears when every
+// section failed — at that point a connection warning is actually useful.
 async function refreshAll() {
   clearInlineError();
   setLoading(true);
 
-  try {
-    await Promise.all([
-      fetchSummary(),
-      fetchByUTM(),
-      fetchByTier(),
-      fetchClicksOverTime(),
-    ]);
-    lastUpdatedEl.textContent = `Last updated: ${now()}`;
-  } catch (err) {
-    if (err.message !== 'Unauthorized') {
-      showInlineError('Could not load data. Check your connection or try refreshing.');
-    }
-  } finally {
-    setLoading(false);
+  const sections = [fetchSummary(), fetchByUTM(), fetchByTier(), fetchClicksOverTime()];
+  const results = await Promise.allSettled(sections);
+
+  const failures = results.filter(r => r.status === 'rejected');
+  const authFailure = failures.find(r => r.reason && r.reason.message === 'Unauthorized');
+
+  if (authFailure) {
+    // apiFetch already showed the session-expired message; don't stack another banner.
+  } else if (failures.length === sections.length) {
+    showInlineError('Could not load data. Check your connection or try refreshing.');
+  } else if (failures.length > 0) {
+    // Some sections failed but others loaded — log for debugging, but don't
+    // flash a scary banner over a partially-populated dashboard.
+    failures.forEach(f => console.warn('[refreshAll] section failed:', f.reason));
   }
+
+  lastUpdatedEl.textContent = `Last updated: ${now()}`;
+  setLoading(false);
 }
 
 // ─── AUTO-REFRESH ────────────────────────────────────────────────────────────
