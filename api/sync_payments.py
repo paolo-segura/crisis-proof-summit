@@ -314,10 +314,15 @@ def read_bridge_sheet():
     # The values().get() that follows then reads the refreshed values.
     svc.spreadsheets().get(spreadsheetId=sheet_id).execute()
 
-    # Read A:Q (17 columns — matches Scale Your Org row width)
+    # Read A:AZ (52 columns). Scale Your Org has a history of inserting columns
+    # mid-sheet without notice (UTM SOURSE added at col 9 on 2026-04-17 pushed
+    # the real Status to col R, truncating it under the old A:Q range and
+    # breaking every downstream parse). A:AZ gives them ~35 columns of runway
+    # before we'd ever need to touch this again. Google Sheets only returns
+    # populated cells so the wider range costs nothing.
     result = svc.spreadsheets().values().get(
         spreadsheetId=sheet_id,
-        range=f"{tab}!A:Q",
+        range=f"{tab}!A:AZ",
     ).execute()
 
     return result.get("values", [])
