@@ -24,5 +24,8 @@
   ],
   "crons": [
     { "path": "/api/sync-payments", "schedule": "*/15 * * * *" }
+  ],
+  "_crons_disabled": [
+    { "path": "/api/send-nurture", "schedule": "0 23 * * *", "_note": "Daily at 7AM Manila (23:00 UTC previous day). Move into crons array to enable." }
   ]
 }
