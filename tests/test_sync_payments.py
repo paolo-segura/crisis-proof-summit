@@ -96,13 +96,45 @@ def test_parse_row_full_sample():
     assert result["quantity"] == 1
     assert result["total"] == 4999.98
     assert result["payment_provider"] == "xendit"
-    assert result["payment_status"] == "FULLY_PAID"
+    # payment_status reads col 16 — real order status ("PAID"/"PENDING"), not
+    # the col-14 amount-mode flag that's always "FULLY_PAID".
+    assert result["payment_status"] == "PAID"
     assert result["paid_at"] == "2026-04-12T01:39:45.555Z"
     assert result["raw_row"] == SAMPLE_ROW
 
 def test_parse_row_short_row_returns_none():
     # Defensive: if Scale Your Org changes schema, skip instead of crashing
     assert sp.parse_row(["only", "three", "cols"]) is None
+
+def test_parse_row_header_row_returns_none():
+    # Literal sheet header: col 0 is "Event Status", not a purchase event → skip
+    header = [
+        "Event Status", "Status", "Full Name", "Email", "Phone Number",
+        "Product Name", "Iterm Pric", "Quantity", "Total price",
+        "Reference Number", "Transaction Number", "ID",
+        "", "", "", "Paid At", "Status",
+    ]
+    assert sp.parse_row(header) is None
+
+def test_parse_row_non_bu_product_returns_none():
+    # Shared Xendit gateway routes other products (e.g. Emerge Book) through the
+    # same sheet. Those belong to a different dashboard, so skip them here.
+    row = list(SAMPLE_ROW)
+    row[5] = "Emerge Book"
+    assert sp.parse_row(row) is None
+
+def test_parse_row_pending_event_is_kept():
+    # We still ingest pending rows so the pending row gets overwritten by the
+    # success row on a later sync. Dashboard filters by payment_status downstream.
+    row = list(SAMPLE_ROW)
+    row[0] = "purchase.pending"
+    row[1] = "pending"
+    row[15] = ""          # no paid_at yet
+    row[16] = "PENDING"   # real status
+    result = sp.parse_row(row)
+    assert result is not None
+    assert result["payment_status"] == "PENDING"
+    assert result["paid_at"] is None
 
 def test_parse_row_missing_order_id_returns_none():
     row = list(SAMPLE_ROW)

@@ -68,6 +68,7 @@ def parse_tier(raw_product):
 # Column indexes for Scale Your Org row layout.
 # Documented in docs/sync-setup.md. Changes here must also update SAMPLE_ROW
 # in tests/test_sync_payments.py.
+_COL_EVENT_STATUS = 0   # "purchase.pending" / "purchase.success" — used to skip header + non-purchase rows
 _COL_FULL_NAME = 2
 _COL_EMAIL = 3
 _COL_MOBILE = 4
@@ -77,9 +78,13 @@ _COL_QUANTITY = 7
 _COL_TOTAL = 8
 _COL_ORDER_ID = 9
 _COL_PROVIDER = 12
-_COL_PAYMENT_STATUS = 14
+_COL_PAYMENT_STATUS = 16  # real order status (PENDING / PAID). Col 14 is a Xendit amount-mode flag that's always "FULLY_PAID".
 _COL_PAID_AT = 15
-_MIN_COLS = 16
+_MIN_COLS = 17
+
+# Business Unlocked ticket tiers. Rows for other products (e.g. "Emerge Book")
+# share the same Xendit gateway but belong to a different dashboard, so we skip them.
+_BU_TIERS = frozenset({"early_bird", "regular", "vip"})
 
 
 def _safe_float(val):
@@ -100,13 +105,27 @@ def parse_row(row):
     """
     Parse one Scale Your Org row into a purchase dict keyed for the
     new_business_normal_purchases table.
-    Returns None if the row is too short or missing an order_id.
+
+    Returns None if the row:
+      - is too short (sheet header/blank rows)
+      - isn't a `purchase.*` event (skips the literal header row whose col 0 is "Event Status")
+      - has no order_id
+      - is for a non-BU product (the gateway is shared with other clients; we only
+        ingest Business Unlocked tiers into this table)
     """
     if not row or len(row) < _MIN_COLS:
         return None
 
+    event = str(row[_COL_EVENT_STATUS]).strip().lower() if row[_COL_EVENT_STATUS] else ""
+    if not event.startswith("purchase."):
+        return None
+
     order_id = str(row[_COL_ORDER_ID]).strip() if row[_COL_ORDER_ID] else ""
     if not order_id:
+        return None
+
+    ticket_tier = parse_tier(row[_COL_PRODUCT])
+    if ticket_tier not in _BU_TIERS:
         return None
 
     return {
@@ -114,7 +133,7 @@ def parse_row(row):
         "full_name":        str(row[_COL_FULL_NAME]).strip() if row[_COL_FULL_NAME] else "",
         "email":            normalize_email(row[_COL_EMAIL]),
         "mobile":           normalize_mobile(row[_COL_MOBILE]),
-        "ticket_tier":      parse_tier(row[_COL_PRODUCT]),
+        "ticket_tier":      ticket_tier,
         "amount":           _safe_float(row[_COL_AMOUNT]),
         "quantity":         _safe_int(row[_COL_QUANTITY]),
         "total":            _safe_float(row[_COL_TOTAL]),
@@ -245,7 +264,12 @@ def _supabase_env():
 
 
 def _supabase_request(method, path, body=None, extra_headers=None):
-    """Generic PostgREST request. Returns parsed JSON (list or dict) or [] on empty body."""
+    """Generic PostgREST request. Returns parsed JSON (list or dict) or [] on empty body.
+
+    On HTTP errors, includes Supabase's response body in the raised exception so the
+    sync log surfaces the actual PostgREST error (e.g. 'column X does not exist',
+    '42P10: no unique constraint for ON CONFLICT') instead of a bare 'HTTP 400'.
+    """
     supabase_url, key = _supabase_env()
     url = f"{supabase_url}/rest/v1/{path.lstrip('/')}"
 
@@ -259,11 +283,24 @@ def _supabase_request(method, path, body=None, extra_headers=None):
         for k, v in extra_headers.items():
             req.add_header(k, v)
 
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        raw = resp.read().decode("utf-8")
-        if not raw:
-            return []
-        return json.loads(raw)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            if not raw:
+                return []
+            return json.loads(raw)
+    except urllib.error.HTTPError as exc:
+        try:
+            body_text = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            body_text = ""
+        # Truncate to keep sync_log rows compact; first 500 chars is always enough
+        # for a PostgREST error payload.
+        snippet = body_text[:500]
+        raise RuntimeError(
+            f"Supabase {method} {path.split('?')[0]} failed: "
+            f"{exc.code} {exc.reason} - {snippet}"
+        ) from exc
 
 
 def supabase_upsert_purchase(purchase, participant_id, match_method, utm_fields):
