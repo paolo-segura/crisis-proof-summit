@@ -261,6 +261,17 @@ def test_parse_row_populated_utm_sourse_is_extracted():
     assert result["utm_source"] == "prime"
 
 
+def test_parse_row_lowercases_utm_values():
+    # 'Prime', 'PRIME', 'prime' must all aggregate to the same dashboard
+    # bucket. Parser lowercases on ingest so the DB holds a single canonical
+    # form — no case drift from GHL, manual share links, or ad tag mistakes.
+    for raw, expected in [("Prime", "prime"), ("PRIME", "prime"), ("  GeNcYs  ", "gencys")]:
+        row = list(SAMPLE_ROW)
+        row[9] = raw
+        result = sp.parse_row(row, COL_MAP)
+        assert result["utm_source"] == expected, f"got {result['utm_source']!r} for {raw!r}"
+
+
 def test_parse_row_session_id_from_extended_header():
     # Future-state: Scale Your Org adds bu_session_id + utm_medium + utm_campaign
     # as trailing columns. parse_row should pick them up automatically.
@@ -268,9 +279,20 @@ def test_parse_row_session_id_from_extended_header():
     row_full = list(SAMPLE_ROW) + ["email", "bu_launch_2026", "9f7c3a-session-uuid"]
     col_map = sp.build_col_map(header_full)
     result = sp.parse_row(row_full, col_map)
+    # UUID stays as-is (case-sensitive by convention)
     assert result["session_id"] == "9f7c3a-session-uuid"
+    # UTMs lowercased
     assert result["utm_medium"] == "email"
     assert result["utm_campaign"] == "bu_launch_2026"
+
+
+def test_parse_row_preserves_session_id_casing_when_mixed():
+    # UUIDs are case-sensitive; don't lowercase them even though UTM values are.
+    header_full = SAMPLE_HEADER + ["bu_session_id"]
+    row_full = list(SAMPLE_ROW) + ["9F7C3A-SessionUUID"]
+    col_map = sp.build_col_map(header_full)
+    result = sp.parse_row(row_full, col_map)
+    assert result["session_id"] == "9F7C3A-SessionUUID"
 
 
 # ---------- match_purchase_to_participant ----------

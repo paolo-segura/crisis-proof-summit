@@ -179,8 +179,15 @@ def parse_row(row, col_map):
         return None
 
     def _opt(key):
-        """Return stripped non-empty string or None — for optional UTM/session fields."""
+        """Return stripped non-empty string or None — for session_id (UUID kept exact)."""
         v = str(_cell(row, col_map, key)).strip()
+        return v if v else None
+
+    def _opt_lc(key):
+        """Same as _opt but lowercased — UTM values are case-normalized so
+        'Prime' and 'prime' aggregate to a single source on the dashboard.
+        Defends against case drift from GHL, manual share links, or ad tag typos."""
+        v = str(_cell(row, col_map, key)).strip().lower()
         return v if v else None
 
     paid_at_raw = str(_cell(row, col_map, "paid_at")).strip()
@@ -197,11 +204,11 @@ def parse_row(row, col_map):
         "payment_provider": "",   # no dedicated header in current Scale Your Org layout
         "payment_status":   str(_cell(row, col_map, "payment_status")).strip().upper(),
         "paid_at":          paid_at_raw if paid_at_raw else None,
-        "session_id":       _opt("session_id"),
-        "utm_source":       _opt("utm_source"),
-        "utm_medium":       _opt("utm_medium"),
-        "utm_campaign":     _opt("utm_campaign"),
-        "utm_content":      _opt("utm_content"),
+        "session_id":       _opt("session_id"),       # UUID — keep exact casing
+        "utm_source":       _opt_lc("utm_source"),
+        "utm_medium":       _opt_lc("utm_medium"),
+        "utm_campaign":     _opt_lc("utm_campaign"),
+        "utm_content":      _opt_lc("utm_content"),
         "raw_row":          list(row),
     }
 

@@ -113,6 +113,10 @@
       ? window.NBN_TRACKING.getSessionId()
       : (localStorage.getItem('nbn_session_id') || null);
 
+    // Lowercase URL-param UTM reads so they match what utm.js already stored
+    // in localStorage (parseUTMFromURL also lowercases). Keeps dashboard groupings clean.
+    function lc(v) { return v ? String(v).toLowerCase() : null; }
+
     var row = {
       session_id: sessionId,
       full_name: fullName,
@@ -121,11 +125,11 @@
       describes_you: describesYou === 'Other' ? 'Other: ' + describesYouOther : describesYou,
       business_type: businessType === 'Other' ? 'Other: ' + businessTypeOther : businessType,
       referred_by: referredBy === 'Other' ? 'Other: ' + referredByOther : referredBy,
-      utm_source: urlParams.get('utm_source') || utm.utm_source || null,
-      utm_medium: urlParams.get('utm_medium') || utm.utm_medium || null,
-      utm_campaign: urlParams.get('utm_campaign') || utm.utm_campaign || null,
-      utm_content: urlParams.get('utm_content') || utm.utm_content || null,
-      utm_term: urlParams.get('utm_term') || utm.utm_term || null,
+      utm_source: lc(urlParams.get('utm_source')) || utm.utm_source || null,
+      utm_medium: lc(urlParams.get('utm_medium')) || utm.utm_medium || null,
+      utm_campaign: lc(urlParams.get('utm_campaign')) || utm.utm_campaign || null,
+      utm_content: lc(urlParams.get('utm_content')) || utm.utm_content || null,
+      utm_term: lc(urlParams.get('utm_term')) || utm.utm_term || null,
       page_url: window.location.href,
       user_agent: navigator.userAgent
     };
@@ -144,6 +148,12 @@
         form.hidden = true;
         successCard.hidden = false;
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof fbq === 'function') {
+          fbq('track', 'Lead', {
+            content_name: 'Participant Details',
+            content_category: 'event-registration',
+          });
+        }
       })
       .catch(function (err) {
         console.error('[participant-form]', err);

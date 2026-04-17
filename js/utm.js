@@ -24,12 +24,14 @@ function getUTMParams() {
 }
 
 function parseUTMFromURL() {
+  // UTM values are lowercased at capture so 'Prime' and 'prime' aggregate to a
+  // single source on the dashboard. Matches api/sync_payments.py parse_row.
   const params = new URLSearchParams(window.location.search);
   const utmData = {};
   let hasAny = false;
   UTM_KEYS.forEach((key) => {
     const value = params.get(key);
-    utmData[key] = value || null;
+    utmData[key] = value ? String(value).toLowerCase() : null;
     if (value) hasAny = true;
   });
   return { utmData, hasAny };
