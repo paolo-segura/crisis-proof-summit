@@ -227,11 +227,11 @@ def supabase_fetch_paid_customers(min_paid_at_iso):
     Fetch paid customers from purchases table.
     Filters by payment_status IN ('PAID', 'FULLY_PAID').
     If min_paid_at_iso is provided, also filters paid_at >= that value.
-    Returns list of dicts with keys: email, full_name, paid_at.
+    Returns list of dicts with keys: email, full_name, paid_at, nurture_anchor_at.
     """
     path = (
         f"{PURCHASES_TABLE}"
-        f"?select=email,full_name,paid_at"
+        f"?select=email,full_name,paid_at,nurture_anchor_at"
         f"&payment_status=in.(PAID,FULLY_PAID)"
     )
     if min_paid_at_iso:
@@ -347,18 +347,26 @@ def run_send_nurture(
         email = _normalize_email(customer.get("email"))
         full_name = customer.get("full_name") or ""
         paid_at_raw = customer.get("paid_at")
+        anchor_raw = customer.get("nurture_anchor_at")
 
         if not email:
             continue
 
         summary["checked"] += 1
 
-        paid_at = parse_paid_at(paid_at_raw)
-        if paid_at is None:
-            summary["errors"].append(f"Unparseable paid_at for {email}: {paid_at_raw!r}")
+        # nurture_anchor_at overrides paid_at when set. This exists because
+        # sync_payments re-syncs paid_at every 15 min from the Sheets bridge,
+        # which would wipe any manual paid_at edits intended to pace a drip.
+        anchor = parse_paid_at(anchor_raw) if anchor_raw else None
+        if anchor is None:
+            anchor = parse_paid_at(paid_at_raw)
+        if anchor is None:
+            summary["errors"].append(
+                f"Unparseable anchor for {email}: paid_at={paid_at_raw!r} anchor={anchor_raw!r}"
+            )
             continue
 
-        due_nums = determine_due_emails(paid_at, now, EVENT_DATE)
+        due_nums = determine_due_emails(anchor, now, EVENT_DATE)
 
         for num in due_nums:
             key = (email, num)
