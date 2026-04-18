@@ -10,10 +10,12 @@
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', '4090713851145938');
   fbq('init', '2039173604147623');
+  fbq('init', '761994189723330');
   fbq('track', 'PageView');
   </script>
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=4090713851145938&ev=PageView&noscript=1"/></noscript>
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2039173604147623&ev=PageView&noscript=1"/></noscript>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=761994189723330&ev=PageView&noscript=1"/></noscript>
   <!-- End Meta Pixel Code -->
 
   <title>Thank You — BUSINESS UNLOCKED</title>
@@ -155,10 +157,22 @@
       var amount = params.get('amount') || params.get('total') || null;
       var email = params.get('email') || null;
 
+      // Fallback: derive ticket value from tier if Scale Your Org redirect drops the amount.
+      // Keeps Meta Pixel ROAS + Supabase revenue reports accurate even without the URL param.
+      function tierToValue(t) {
+        if (!t) return null;
+        var k = String(t).toLowerCase();
+        if (k.indexOf('vip') !== -1) return 5000;
+        if (k.indexOf('early') !== -1) return 1999;
+        if (k.indexOf('regular') !== -1 || k.indexOf('standard') !== -1) return 2500;
+        return null;
+      }
+      var resolvedAmount = amount ? parseFloat(amount) : tierToValue(tier);
+
       // Meta Pixel — Purchase event
       if (typeof fbq === 'function') {
         fbq('track', 'Purchase', {
-          value: amount ? parseFloat(amount) : 0,
+          value: resolvedAmount || 0,
           currency: 'PHP',
           content_name: tier || 'Business Unlocked Ticket',
           content_category: 'event-ticket',
@@ -180,7 +194,7 @@
           session_id: sessionId,
           ticket_tier: tier,
           order_id: orderId,
-          amount: amount ? parseFloat(amount) : null,
+          amount: resolvedAmount,
           email: email,
           utm_source: params.get('utm_source') || storedUTM.utm_source || null,
           utm_medium: params.get('utm_medium') || storedUTM.utm_medium || null,
