@@ -1,0 +1,33 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Business Unlocked//Pre-Event Webinar Series//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:Asia/Manila
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0800
+TZOFFSETTO:+0800
+TZNAME:PHT
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:c71c47a2-5a72-5c69-91de-4bcec07ec288
+DTSTAMP:20260420T062758Z
+DTSTART;TZID=Asia/Manila:20260425T190000
+DTEND;TZID=Asia/Manila:20260425T203000
+SUMMARY:Business Unlocked · Webinar 2 — Charlie Gengos
+DESCRIPTION:Flexibility Unlocked: 3 Ways to Sell Kahit Bumagsak ang Isang Revenue Stream.
+LOCATION:Zoom (link in registration email)
+URL:https://exponential-university.live/free
+ORGANIZER;CN=Business Unlocked:mailto:hello@exponential-university.live
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:Webinar starts in 30 minutes
+END:VALARM
+END:VEVENT
+END:VCALENDAR

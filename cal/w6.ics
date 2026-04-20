@@ -1,0 +1,33 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Business Unlocked//Pre-Event Webinar Series//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:Asia/Manila
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0800
+TZOFFSETTO:+0800
+TZNAME:PHT
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:4588d3cb-23fc-56a9-acef-550f0895465d
+DTSTAMP:20260420T062758Z
+DTSTART;TZID=Asia/Manila:20260507T190000
+DTEND;TZID=Asia/Manila:20260507T203000
+SUMMARY:Business Unlocked · Webinar 6 — Diana Jane Mitchell
+DESCRIPTION:The Final Unlock: Your 72-Hour Crisis-Proof Action Plan (Integration · T-72 hours before May 9).
+LOCATION:Zoom (link in registration email)
+URL:https://exponential-university.live/free
+ORGANIZER;CN=Business Unlocked:mailto:hello@exponential-university.live
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:Webinar starts in 30 minutes
+END:VALARM
+END:VEVENT
+END:VCALENDAR
