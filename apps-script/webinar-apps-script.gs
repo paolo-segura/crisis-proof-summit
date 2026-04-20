@@ -1,16 +1,19 @@
 /**
  * Business Unlocked — Pre-Event Webinar Funnel
- * Google Apps Script: append registrations to a Sheet.
+ * Google Apps Script: append registrations + expose them for the reminder cron.
  *
  * HOW TO DEPLOY (one-time):
  *   1. Open your Google Sheet (the one that will store registrations).
  *   2. Extensions → Apps Script → paste this ENTIRE file (replace the default).
- *   3. Click "Deploy" → "New deployment"
+ *   3. In Apps Script: Project Settings → Script properties → add
+ *        SHEETS_READ_SECRET = <any random string you choose>
+ *      (Use the SAME value for the SHEETS_READ_SECRET env var on Vercel.)
+ *   4. Click "Deploy" → "New deployment"
  *        Type: Web app
  *        Execute as: Me (your Google account)
  *        Who has access: Anyone
  *        → Click Deploy → Authorize.
- *   4. Copy the Web app URL. Paste into Vercel env as SHEETS_WEBHOOK_URL.
+ *   5. Copy the Web app URL. Paste into Vercel env as SHEETS_WEBHOOK_URL.
  *
  * HOW TO UPDATE (after any code change):
  *   Deploy → Manage deployments → pencil ✏️ → Version: "New version" → Deploy.
@@ -47,7 +50,34 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  var action = (e && e.parameter && e.parameter.action) || '';
+
+  if (action === 'list') {
+    var expected = PropertiesService.getScriptProperties().getProperty('SHEETS_READ_SECRET');
+    var provided = (e && e.parameter && e.parameter.secret) || '';
+    if (!expected || provided !== expected) {
+      return _bu_json({ ok: false, error: 'forbidden' });
+    }
+    try {
+      var sheet = _bu_getSheet('Registrations');
+      var values = sheet.getDataRange().getValues();
+      if (values.length < 2) return _bu_json({ ok: true, rows: [] });
+      var headers = values[0];
+      var rows = [];
+      for (var i = 1; i < values.length; i++) {
+        var row = {};
+        for (var j = 0; j < headers.length; j++) {
+          row[String(headers[j])] = values[i][j];
+        }
+        rows.push(row);
+      }
+      return _bu_json({ ok: true, rows: rows });
+    } catch (err) {
+      return _bu_json({ ok: false, error: String(err) });
+    }
+  }
+
   return ContentService
     .createTextOutput('ok — BU webinar signup intake')
     .setMimeType(ContentService.MimeType.TEXT);

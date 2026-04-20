@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <title>{{headline}} — {{speaker}}</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    body { margin: 0; padding: 0; background-color: #FAFAF9; }
+    a { color: #115E59; }
+    @media only screen and (max-width: 620px) {
+      .container { width: 100% !important; }
+      .p-32 { padding: 22px !important; }
+      .h1 { font-size: 26px !important; line-height: 1.2 !important; }
+      .zoom-td { padding: 18px !important; }
+      .zoom-code { font-size: 16px !important; }
+      .btn-main { font-size: 15px !important; padding: 14px 22px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#FAFAF9; font-family: 'Poppins', Helvetica, Arial, sans-serif; color:#0F1B2E;">
+
+<div style="display:none; font-size:1px; color:#FAFAF9; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+  {{preheader}}
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAFAF9;">
+  <tr>
+    <td align="center" style="padding: 32px 12px;">
+
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background-color:#FFFFFF; border-radius:16px; overflow:hidden; border:1px solid #E7E5E4;">
+
+        <!-- Urgency banner -->
+        <tr>
+          <td style="padding:14px 24px; background-color:#F59E0B; text-align:center;">
+            <p style="margin:0; font-size:11px; font-weight:800; letter-spacing:3px; color:#0F1B2E; text-transform:uppercase;">
+              {{urgency_label}}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td class="p-32" style="padding:30px 32px 18px 32px;">
+            <p style="margin:0 0 12px 0; font-size:11px; font-weight:700; letter-spacing:2.4px; color:#115E59; text-transform:uppercase;">
+              Webinar {{webinar_num}} · {{pillar}}
+            </p>
+            <h1 class="h1" style="margin:0; font-size:30px; line-height:1.2; font-weight:500; color:#0F1B2E; font-family:'Lora', Georgia, serif;">
+              {{headline}}, {{name}}.
+            </h1>
+            <p style="margin:14px 0 0 0; font-size:15px; line-height:1.6; color:#334155;">
+              {{lead}}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Poster -->
+        <tr>
+          <td style="padding:6px 32px 16px 32px;">
+            <a href="{{zoom_url}}" target="_blank" style="text-decoration:none;">
+              <img src="{{poster_url}}" alt="{{speaker}} — {{topic}}" width="536" style="width:100%; max-width:536px; height:auto; border-radius:14px; display:block;">
+            </a>
+          </td>
+        </tr>
+
+        <!-- Talk details -->
+        <tr>
+          <td class="p-32" style="padding:4px 32px 18px 32px;">
+            <p style="margin:0 0 6px 0; font-size:12px; font-weight:700; color:#64748B; letter-spacing:1px; text-transform:uppercase;">
+              {{time_label}}
+            </p>
+            <h2 style="margin:0 0 6px 0; font-size:22px; line-height:1.3; font-weight:600; color:#0F1B2E; font-family:'Lora', Georgia, serif;">
+              {{speaker}}
+            </h2>
+            <p style="margin:0; font-size:15px; line-height:1.55; color:#0F1B2E; font-weight:500;">
+              {{topic}}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Zoom CTA -->
+        <tr>
+          <td class="p-32" style="padding:6px 32px 22px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0F1B2E; border-radius:14px;">
+              <tr><td class="zoom-td" style="padding:22px 26px;">
+                <p style="margin:0 0 6px 0; font-size:11px; font-weight:700; letter-spacing:2.4px; color:#F59E0B; text-transform:uppercase;">Your Zoom Link</p>
+                <h3 style="margin:0 0 14px 0; font-family:'Lora', Georgia, serif; font-weight:500; font-size:20px; color:#FFFFFF;">Same link as always — tap to join.</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                  <tr>
+                    <td style="padding-right:18px; font-size:10px; font-weight:700; letter-spacing:1.4px; color:#CBD5E1; text-transform:uppercase;">Meeting ID</td>
+                    <td class="zoom-code" style="font-family:'SF Mono', Menlo, monospace; font-size:17px; font-weight:600; color:#FFFFFF; letter-spacing:0.04em;">829 0039 8611</td>
+                  </tr>
+                  <tr>
+                    <td style="padding-right:18px; padding-top:6px; font-size:10px; font-weight:700; letter-spacing:1.4px; color:#CBD5E1; text-transform:uppercase;">Passcode</td>
+                    <td class="zoom-code" style="padding-top:6px; font-family:'SF Mono', Menlo, monospace; font-size:17px; font-weight:600; color:#FFFFFF; letter-spacing:0.04em;">CRISIS</td>
+                  </tr>
+                </table>
+                <a href="{{zoom_url}}" target="_blank" style="display:inline-block; padding:14px 28px; background-color:#F59E0B; color:#0F1B2E; font-size:15px; font-weight:700; border-radius:999px; text-decoration:none;">
+                  Join Zoom →
+                </a>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Calendar -->
+        <tr>
+          <td class="p-32" style="padding:0 32px 22px 32px;">
+            <a href="{{ics_url}}" style="display:inline-block; padding:10px 18px; background-color:#F5F5F4; color:#0F1B2E; font-size:13px; font-weight:600; border-radius:999px; text-decoration:none; border:1px solid #E7E5E4;">
+              + Add to Calendar
+            </a>
+          </td>
+        </tr>
+
+        <!-- Main event CTA -->
+        <tr>
+          <td class="p-32" style="padding:20px 32px 28px 32px; background-color:#F8FAFC; border-top:1px solid #F1ECE4;">
+            <p style="margin:0 0 8px 0; font-size:11px; font-weight:700; letter-spacing:2.4px; color:#F59E0B; text-transform:uppercase;">
+              The Main Event · May 9, 2026
+            </p>
+            <h3 style="margin:0 0 10px 0; font-family:'Lora', Georgia, serif; font-weight:500; font-size:22px; line-height:1.25; color:#0F1B2E;">
+              Business Unlocked — Turn Crisis into Cashflow
+            </h3>
+            <p style="margin:0 0 16px 0; font-size:14px; line-height:1.55; color:#334155;">
+              Webinars are the warm-up. May 9 is where the framework becomes a plan — live, in Pasay.
+              Early Bird ₱1,999 · Regular ₱2,500 · VIP ₱5,000.
+            </p>
+            <a href="{{main_event_url}}" class="btn-main" target="_blank" style="display:inline-block; padding:14px 26px; background-color:#115E59; color:#FFFFFF; font-size:14px; font-weight:700; border-radius:999px; text-decoration:none;">
+              Secure Your Seat →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:22px 32px 28px 32px; text-align:center; background-color:#FAFAF9;">
+            <p style="margin:0 0 6px 0; font-size:12px; color:#64748B;">
+              Exponential University × Gencys Group
+            </p>
+            <p style="margin:0; font-size:11px; color:#94A3B8;">
+              You're getting this because you registered for the 6-webinar series.
+              <a href="{{unsubscribe_url}}" style="color:#94A3B8; text-decoration:underline;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
