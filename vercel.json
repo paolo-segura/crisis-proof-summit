@@ -26,5 +26,10 @@
   ],
   "crons": [
     { "path": "/api/sync-payments", "schedule": "*/15 * * * *" }
-  ]
+  ],
+  "functions": {
+    "api/*.py": {
+      "excludeFiles": "{assets/**,*.png,*.jpg,*.jpeg,*.webp,*.mp4,*.webm,setb_*.json,captions_*.txt,captions_*.json,canva_ops.json,generate_*.py,compose_*.py,build_*.py,extract_captions.py,retry_scene20.py,upload_*.py,make_nbn_transparent.py,tests/**,docs/**,__pycache__/**,*.md}"
+    }
+  }
 }
