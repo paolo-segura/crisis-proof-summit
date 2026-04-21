@@ -870,9 +870,66 @@
         <canvas id="clicks-chart"></canvas>
       </div>
     </div>
+
+    <!-- ─── Webinar Funnel Attendees ────────────────────────── -->
+    <div id="webinar-section" style="display:none;">
+      <div class="section-title" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <span>Webinar Funnel Attendees</span>
+        <button id="webinar-export-csv" type="button"
+          style="background:var(--teal); color:#fff; border:0; padding:10px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;">
+          Export CSV
+        </button>
+      </div>
+
+      <div class="kpi-strip">
+        <div class="kpi">
+          <div class="kpi-label">Total Registrants</div>
+          <div class="kpi-value" id="webinar-total">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Registered Today</div>
+          <div class="kpi-value" id="webinar-today">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Last 7 Days</div>
+          <div class="kpi-value" id="webinar-week">0</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Registrations Per Day</h3>
+        <div class="chart-wrap">
+          <canvas id="webinar-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="webinar-table">
+          <thead>
+            <tr>
+              <th>Registered</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+            </tr>
+          </thead>
+          <tbody id="webinar-table-body">
+            <tr>
+              <td colspan="4">
+                <div class="empty-state" style="display:block">
+                  <span class="empty-icon">🎟️</span>
+                  <p>Loading webinar registrations…</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script src="js/admin.js"></script>
   <script src="js/admin-sales.js"></script>
+  <script src="js/admin-webinar.js"></script>
 </body>
 </html>
