@@ -6,6 +6,15 @@
   <meta name="description" content="6 free webinars to unlock the crisis-proof business mindset — leading up to Business Unlocked on May 9, 2026.">
   <title>6 Free Webinars · Business Unlocked Pre-Event Series</title>
 
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '418961251002616');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=418961251002616&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->
+
   <!-- Open Graph -->
   <meta property="og:title" content="6 Free Webinars · Unlock the Crisis-Proof Business Mindset">
   <meta property="og:description" content="Register once, get all 6 Zoom links. Series starts April 22, 2026.">
@@ -258,5 +267,16 @@
   </footer>
 
   <script src="/js/free-form.js"></script>
+  <script>
+    // Fire a custom CTA click event when users click the register buttons.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.btn-hero, .btn-submit');
+      if (!btn || typeof fbq !== 'function') return;
+      fbq('trackCustom', 'RegisterCTAClick', {
+        label: (btn.textContent || '').trim().slice(0, 60),
+        location: btn.classList.contains('btn-hero') ? 'hero' : 'form',
+      });
+    });
+  </script>
 </body>
 </html>
