@@ -24,8 +24,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _webinar_common import (  # noqa: E402
     BASE_URL, MAIN_EVENT_URL, ZOOM_URL, agenda_html, authorized,
     brevo_config, fetch_all_recipients, get_webinar, get_webinar_by_date,
-    read_template, render, send_brevo, unsubscribe_url,
+    read_template, render, send_brevo, unsubscribe_url, within_cron_window,
 )
+
+# Scheduled for 10:30 UTC (6:30 PM PHT).
+EXPECTED_HOUR_UTC = 10
+EXPECTED_MIN_UTC = 30
 
 
 def _pht_today() -> date:
@@ -71,7 +75,7 @@ def _send_one(template: str, w: dict, row: dict, api_key: str,
             "err": body[:150] if not (200 <= status < 300) else ""}
 
 
-def _run(force_num: str | None = None) -> dict:
+def _run(force_num: str | None = None, dry: bool = False) -> dict:
     if force_num:
         w = get_webinar(force_num)
         if not w:
@@ -84,12 +88,16 @@ def _run(force_num: str | None = None) -> dict:
 
     template = read_template("webinar-reminder.html")
     api_key, sender_email, sender_name = brevo_config()
-    if not api_key:
+    if not api_key and not dry:
         return {"ok": False, "error": "BREVO_API_KEY not set"}
 
     recipients, meta = fetch_all_recipients()
     if not recipients:
         return {"ok": False, "error": "no recipients", "meta": meta}
+
+    if dry:
+        return {"ok": True, "dry": True, "webinar": f"W{w['num']} — {w['speaker']}",
+                "would_send_to": meta}
 
     stats = {"sent": 0, "failed": 0, "errors": []}
     with ThreadPoolExecutor(max_workers=12) as pool:
@@ -123,8 +131,20 @@ class handler(BaseHTTPRequestHandler):  # noqa: N801
             return self._json(401, {"error": "unauthorized"})
 
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        force = (qs.get("webinar") or [None])[0]
-        result = _run(force_num=force)
+        force_num = (qs.get("webinar") or [None])[0]
+        force_flag = (qs.get("force") or ["0"])[0] == "1"
+        dry = (qs.get("dry") or ["0"])[0] == "1"
+
+        if not force_flag and not dry and not within_cron_window(EXPECTED_HOUR_UTC, EXPECTED_MIN_UTC):
+            return self._json(200, {
+                "ok": True, "skipped": True,
+                "reason": (
+                    f"outside cron window ({EXPECTED_HOUR_UTC:02d}:{EXPECTED_MIN_UTC:02d} UTC ±10min). "
+                    "Add &force=1 to override or &dry=1 to preview."
+                ),
+            })
+
+        result = _run(force_num=force_num, dry=dry)
         self._json(200 if result.get("ok") else 500, result)
 
     def do_POST(self) -> None:  # noqa: N802

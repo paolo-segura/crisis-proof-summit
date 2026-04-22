@@ -62,19 +62,23 @@ def _send_one(template: str, w: dict, row: dict, api_key: str,
             "err": body[:150] if not (200 <= status < 300) else ""}
 
 
-def _run(num: str) -> dict:
+def _run(num: str, dry: bool = False) -> dict:
     w = get_webinar(num)
     if not w:
         return {"ok": False, "error": f"unknown webinar: {num}"}
 
     template = read_template("webinar-reminder.html")
     api_key, sender_email, sender_name = brevo_config()
-    if not api_key:
+    if not api_key and not dry:
         return {"ok": False, "error": "BREVO_API_KEY not set"}
 
     recipients, meta = fetch_all_recipients()
     if not recipients:
         return {"ok": False, "error": "no recipients", "meta": meta}
+
+    if dry:
+        return {"ok": True, "dry": True, "webinar": f"W{w['num']} — {w['speaker']}",
+                "would_send_to": meta}
 
     stats = {"sent": 0, "failed": 0, "errors": []}
     with ThreadPoolExecutor(max_workers=12) as pool:
@@ -110,7 +114,8 @@ class handler(BaseHTTPRequestHandler):  # noqa: N801
 
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         num = (qs.get("webinar") or ["01"])[0]
-        result = _run(num)
+        dry = (qs.get("dry") or ["0"])[0] == "1"
+        result = _run(num, dry=dry)
         self._json(200 if result.get("ok") else 500, result)
 
     def do_POST(self) -> None:  # noqa: N802

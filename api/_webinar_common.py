@@ -275,6 +275,20 @@ def fetch_all_recipients() -> tuple[list[dict], dict]:
     return unique, meta
 
 
+# --- Cron time-window guard -------------------------------------------------
+def within_cron_window(expected_hour_utc: int, expected_minute_utc: int = 0,
+                       tolerance_min: int = 10) -> bool:
+    """Return True if current UTC time is within ±tolerance_min of the cron's
+    configured fire time. Used to reject accidental manual-curl triggers
+    that would otherwise auto-pick today's webinar and blast. Vercel fires
+    crons right at the scheduled minute, so the real cron comfortably passes."""
+    from datetime import datetime, timezone
+    now = datetime.now(tz=timezone.utc)
+    expected_minutes = expected_hour_utc * 60 + expected_minute_utc
+    now_minutes = now.hour * 60 + now.minute
+    return abs(now_minutes - expected_minutes) <= tolerance_min
+
+
 # --- Template rendering -----------------------------------------------------
 def render(template: str, vars: dict) -> str:
     out = template
