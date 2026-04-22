@@ -150,70 +150,50 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-client.js"></script>
   <script src="/js/pixel-events.js"></script>
   <script>
-    // Log a purchase when scaleyourorg.net redirects back here.
-    // Expected query params (best-effort — whatever scaleyourorg.net passes through):
-    //   session_id, tier, utm_source, utm_medium, utm_campaign, order_id, amount, email
+    // Fired when Xendit redirects the user back after a successful payment.
+    // Expected query params from our /api/create-invoice success_redirect_url:
+    //   session_id, order_id, tier, quantity, value, utm_source/medium/campaign/content
+    //
+    // Meta Pixel Purchase event fires with the exact value so Ads Manager
+    // reports accurate ROAS. The authoritative purchase record is written
+    // server-side by /api/xendit-webhook — we don't duplicate the insert here.
     (function () {
       var params = new URLSearchParams(window.location.search);
-      var sessionId = params.get('session_id');
-      var tier = params.get('tier');
-      var orderId = params.get('order_id') || params.get('transaction_id') || params.get('id') || null;
-      var amount = params.get('amount') || params.get('total') || null;
-      var email = params.get('email') || null;
+      var tier = params.get('tier') || '';
+      var quantity = parseInt(params.get('quantity') || '1', 10) || 1;
+      var valueParam = params.get('value');
+      var orderId = params.get('order_id') || null;
 
-      // Fallback: derive ticket value from tier if Scale Your Org redirect drops the amount.
-      // Keeps Meta Pixel ROAS + Supabase revenue reports accurate even without the URL param.
-      function tierToValue(t) {
-        if (!t) return null;
-        var k = String(t).toLowerCase();
+      // Fallback for safety: if redirect somehow drops `value`, derive from tier
+      // so Pixel still fires with a non-zero amount (better than a $0 Purchase
+      // event that Meta might reject or down-weight for optimization).
+      function tierToUnitPrice(t) {
+        var k = String(t || '').toLowerCase();
         if (k.indexOf('vip') !== -1) return 5000;
         if (k.indexOf('early') !== -1) return 1999;
         if (k.indexOf('regular') !== -1 || k.indexOf('standard') !== -1) return 2500;
-        return null;
+        return 1999; // safe default
       }
-      var resolvedAmount = amount ? parseFloat(amount) : tierToValue(tier);
+      var value = valueParam ? parseFloat(valueParam) : (tierToUnitPrice(tier) * quantity);
 
-      // Meta Pixel — Purchase event
+      // Meta Pixel — Purchase event. fbq fans out to all 7 init'd pixel IDs
+      // automatically. One event call, seven pixels fired.
       if (typeof fbq === 'function') {
-        fbq('track', 'Purchase', {
-          value: resolvedAmount || 0,
-          currency: 'PHP',
-          content_name: tier || 'Business Unlocked Ticket',
-          content_category: 'event-ticket',
-        });
+        try {
+          fbq('track', 'Purchase', {
+            value: value,
+            currency: 'PHP',
+            content_name: 'Business Unlocked Ticket',
+            content_category: 'event',
+            content_ids: [tier || 'early_bird'],
+            content_type: 'product',
+            num_items: quantity,
+            order_id: orderId || undefined,
+          });
+        } catch (err) { console.warn('Pixel Purchase failed:', err); }
       }
-
-      // Fall back to localStorage for session/utm if provider stripped them
-      var storedSession = localStorage.getItem('nbn_session_id');
-      var storedUTM = {};
-      try { storedUTM = JSON.parse(localStorage.getItem('nbn_utm') || '{}'); } catch {}
-
-      if (!sessionId) sessionId = storedSession;
-
-      if (typeof supabase === 'undefined' || !supabase) return;
-
-      supabase
-        .from(TABLE_PURCHASES)
-        .insert({
-          session_id: sessionId,
-          ticket_tier: tier,
-          order_id: orderId,
-          amount: resolvedAmount,
-          email: email,
-          utm_source: params.get('utm_source') || storedUTM.utm_source || null,
-          utm_medium: params.get('utm_medium') || storedUTM.utm_medium || null,
-          utm_campaign: params.get('utm_campaign') || storedUTM.utm_campaign || null,
-          utm_content: params.get('utm_content') || storedUTM.utm_content || null,
-          utm_term: params.get('utm_term') || storedUTM.utm_term || null,
-          raw_query: window.location.search || null,
-        })
-        .then(function (res) {
-          if (res && res.error) console.warn('Purchase log failed:', res.error.message);
-        });
     })();
   </script>
 </body>
