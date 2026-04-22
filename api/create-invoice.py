@@ -34,10 +34,17 @@ EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$"
 
 # Tier config (amount in PHP per ticket, label shown on Xendit's hosted page,
 # short code used in the human-readable order_id).
+#
+# ⚠️ TEMPORARY: amounts lowered to ₱20 for live E2E webhook + redirect test
+# on the feature-branch preview URL. DO NOT MERGE TO MAIN WHILE AT ₱20.
+# Revert block (copy/paste back before merging):
+#   "early_bird": {"amount": 1999, "label": "Early Bird", "code": "EB"},
+#   "regular":    {"amount": 2500, "label": "Regular",    "code": "REG"},
+#   "vip":        {"amount": 5000, "label": "VIP",        "code": "VIP"},
 TIERS = {
-    "early_bird": {"amount": 1999, "label": "Early Bird", "code": "EB"},
-    "regular":    {"amount": 2500, "label": "Regular",    "code": "REG"},
-    "vip":        {"amount": 5000, "label": "VIP",        "code": "VIP"},
+    "early_bird": {"amount": 20, "label": "Early Bird (TEST)", "code": "EB"},
+    "regular":    {"amount": 20, "label": "Regular (TEST)",    "code": "REG"},
+    "vip":        {"amount": 20, "label": "VIP (TEST)",        "code": "VIP"},
 }
 
 EVENT_NAME = "Business Unlocked Summit"
