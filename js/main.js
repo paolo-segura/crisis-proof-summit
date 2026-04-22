@@ -502,32 +502,14 @@ function initCheckout() {
     });
   }
 
-  var tierPrices = { early_bird: 1999, regular: 2500, vip: 5000 };
-
-  // Ticket buttons now navigate to the native /checkout page instead of
-  // opening an iframe to Scale Your Org's GHL checkout. session_id + UTM
-  // are already persisted in localStorage by utm.js, so /checkout picks
-  // them up automatically — no need to pass through the query string.
-  // Click logging + Pixel InitiateCheckout stay here (fires on the
-  // source page) but the final InitiateCheckout is also fired on
-  // /checkout on submit for Advantage+ reliability.
   document.querySelectorAll('.ticket-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.preventDefault();
       var tier = btn.dataset.tier || 'early_bird';
+      var baseURL = checkoutLinks[tier] || checkoutLinks.early_bird;
+      var payURL = buildCheckoutURL(baseURL, tier);
       logClick(tier);
-      if (typeof fbq === 'function') {
-        try {
-          fbq('track', 'InitiateCheckout', {
-            content_name: 'Business Unlocked Ticket',
-            content_category: 'event',
-            content_ids: [tier],
-            value: tierPrices[tier] || 1999,
-            currency: 'PHP',
-          });
-        } catch (_) { /* non-fatal */ }
-      }
-      window.location.href = '/checkout?tier=' + encodeURIComponent(tier);
+      openCheckoutModal(payURL);
     });
   });
 }

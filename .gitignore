@@ -1,68 +1,7 @@
-# Secrets — never commit
 .env
-.env.*
-!.env.example
-*_secret_*.csv
-*_api_key*.csv
-xendit_*.csv
-
-# Vercel
 .vercel
-
-# Python
+node_modules/
+assets/hero-bg.mp4
 .venv/
 __pycache__/
 *.pyc
-
-# Node
-node_modules/
-
-# macOS
-.DS_Store
-
-# Claude Code
-.claude/settings.local.json
-.claude/worktrees/
-
-# Generated / heavy marketing assets (don't ship via git — produced locally or
-# synced via Drive/Canva). Explicitly kept: assets/images/, assets/fonts/ —
-# those contain actual site-served logos/speaker photos/webfonts.
-ad-sets/
-ads/creatives/
-ads/uploads/
-assets/generated/
-assets/internal-carousel/
-assets/webinars/
-Webinar\ Posters/
-Webinar\ Posters.zip
-april-20-updates/
-content-kit/
-canva-exports/
-video-ads/
-monitor/reports/
-
-# macOS Finder duplicate files ("Document 2.pdf", "script 2.py", etc.)
-* 2.pdf
-* 2.zip
-* 2.md
-* 2.py
-* 2.js
-* 2.html
-* 2.css
-* 2.ttf
-* 2.png
-* 2.jpg
-* 2.jpeg
-* 2.sql
-* 2.json
-* 2.txt
-
-# Heavy binaries in root that shouldn't be tracked
-*.zip
-*.mp4
-
-# Large placeholder / WIP docs
-SET-A-EXTRACTED*.md
-SET-B-QA-REPORT*.md
-ADS-CAMPAIGN.md
-Business_Unlocked_Webinar_Guide.pdf
