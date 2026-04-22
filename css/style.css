@@ -2429,3 +2429,367 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   .chart-grid { grid-template-columns: 1fr; }
   .sales-link-banner { flex-direction: column; gap: 8px; align-items: stretch; text-align: center; }
 }
+
+/* =====================================================================
+   Inline Xendit checkout — sits inside #pricing, below the 2 tier cards.
+   Posts to /api/create-invoice then redirects to Xendit's hosted page.
+   ===================================================================== */
+
+.inline-checkout {
+  max-width: 600px;
+  margin: 40px auto 0;
+  background: linear-gradient(180deg, #0B1220 0%, #0E1526 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  padding: 32px 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(13, 148, 136, 0.08);
+  position: relative;
+  z-index: 3;
+  text-align: left;
+}
+.inline-checkout-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--teal-light);
+  text-align: center;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+.inline-checkout-sub {
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 0.88rem;
+  margin: 0 0 24px;
+}
+
+.ic-step { margin-bottom: 28px; }
+.ic-step:last-of-type { margin-bottom: 0; }
+.ic-step-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--teal-light);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.ic-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Step 1 — Tickets */
+.ic-tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ic-tier-tile { position: relative; cursor: pointer; display: block; }
+.ic-tier-tile input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+.ic-tier-tile-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 14px;
+  min-height: 96px;
+  background: #161E32;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  text-align: center;
+  position: relative;
+  z-index: 0;
+}
+.ic-tier-tile:hover .ic-tier-tile-box { border-color: rgba(20, 184, 166, 0.55); }
+.ic-tier-tile input:checked + .ic-tier-tile-box {
+  border-color: var(--teal);
+  background: rgba(13, 148, 136, 0.10);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+}
+.ic-tier-tile-badge {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.ic-tier-tile input:checked + .ic-tier-tile-box .ic-tier-tile-badge { color: var(--teal-light); }
+.ic-tier-tile.vip input:checked + .ic-tier-tile-box .ic-tier-tile-badge { color: var(--amber); }
+.ic-tier-tile-price {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+}
+.ic-tier-tile-price .strike {
+  font-size: 0.82rem;
+  text-decoration: line-through;
+  color: #6B7280;
+  margin-right: 6px;
+  font-weight: 400;
+}
+
+.ic-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #161E32;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+}
+.ic-qty-label { font-size: 0.9rem; color: #D1D5DB; }
+.ic-qty-control { display: flex; align-items: center; gap: 12px; }
+.ic-qty-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #1E2638;
+  border-radius: 7px;
+  color: var(--teal-light);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.ic-qty-btn:hover { background: rgba(13, 148, 136, 0.18); }
+.ic-qty-value {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Step 2 — Inputs */
+.ic-form-group { margin-bottom: 12px; }
+.ic-form-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #161E32;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.ic-form-input::placeholder { color: #6B7280; }
+.ic-form-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+}
+
+/* Step 3 — Payment method */
+.ic-pm-hint { font-size: 0.85rem; color: #9CA3AF; margin: -4px 0 14px; }
+.ic-pm-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.ic-pm-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: #161E32;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  color: #D1D5DB;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ic-pm-tab:hover { border-color: rgba(20, 184, 166, 0.4); }
+.ic-pm-tab.active {
+  border-color: var(--teal);
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--teal-light);
+}
+.ic-pm-tab svg { display: block; }
+
+.ic-pm-list { display: flex; flex-direction: column; gap: 8px; }
+.ic-pm-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #161E32;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.ic-pm-row:hover { border-color: rgba(20, 184, 166, 0.35); }
+.ic-pm-row input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.ic-bullet {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #6B7280;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.ic-pm-row input:checked + .ic-bullet { border-color: var(--teal); }
+.ic-pm-row input:checked + .ic-bullet::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--teal);
+  border-radius: 50%;
+}
+.ic-pm-row:has(input:checked) {
+  border-color: var(--teal);
+  background: rgba(13, 148, 136, 0.08);
+}
+.ic-pm-row-name { flex: 1; color: #ffffff; font-weight: 500; font-size: 0.95rem; }
+.ic-pm-row-logo { flex-shrink: 0; height: 28px; display: flex; align-items: center; }
+
+.ic-pm-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--teal-light);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.ic-loading-dots { display: inline-flex; gap: 4px; align-items: center; }
+.ic-ready-check {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--emerald, #10B981);
+  color: white;
+}
+.ic-ready-check svg { width: 10px; height: 10px; }
+.ic-pm-status.ready { color: var(--emerald, #10B981); font-weight: 600; }
+.ic-pm-status.ready .ic-loading-dots { display: none; }
+.ic-pm-status.ready .ic-ready-check { display: inline-flex; }
+.ic-pm-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: icpmpulse 1.4s ease-in-out infinite;
+}
+.ic-pm-dot:nth-child(2) { animation-delay: 0.2s; }
+.ic-pm-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes icpmpulse {
+  0%, 60%, 100% { opacity: 0.35; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.35); }
+}
+
+/* Order total + pay + error + honeypot */
+.ic-error {
+  margin-top: 16px;
+  padding: 11px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  color: var(--coral);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.ic-order-total-row {
+  margin-top: 28px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.12), rgba(20, 184, 166, 0.18));
+  border: 1px solid var(--teal);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.ic-order-total-label {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #D1D5DB;
+}
+.ic-order-total-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--teal-light);
+}
+.ic-btn-pay {
+  width: 100%;
+  padding: 17px;
+  margin-top: 14px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-light));
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.ic-btn-pay:disabled {
+  background: linear-gradient(135deg, #334155, #475569);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+.ic-btn-pay:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px var(--teal-glow);
+}
+.ic-btn-label { display: inline-flex; align-items: center; gap: 10px; }
+.ic-btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: icspin 0.8s linear infinite;
+}
+@keyframes icspin { to { transform: rotate(360deg); } }
+
+.ic-secure-note {
+  text-align: center;
+  font-size: 0.74rem;
+  color: #6B7280;
+  margin: 12px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.ic-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+@media (max-width: 560px) {
+  .inline-checkout { padding: 24px 18px; }
+  .ic-tier-grid { grid-template-columns: 1fr; }
+  .ic-pm-tabs { grid-template-columns: 1fr 1fr; }
+}

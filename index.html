@@ -660,6 +660,157 @@
           </article>
 
         </div>
+
+        <!-- ========== INLINE XENDIT CHECKOUT ========== -->
+        <form class="inline-checkout" id="inline-checkout-form" novalidate>
+          <h3 class="inline-checkout-title">Secure Your Seat</h3>
+          <p class="inline-checkout-sub">Complete the form below to reserve your spot.</p>
+
+          <!-- Step 1: Ticket -->
+          <div class="ic-step">
+            <div class="ic-step-label"><span class="ic-step-num">1</span> CHOOSE YOUR TICKET</div>
+            <div class="ic-tier-grid">
+              <label class="ic-tier-tile">
+                <input type="radio" name="tier" value="early_bird" checked />
+                <div class="ic-tier-tile-box">
+                  <div class="ic-tier-tile-badge">EARLY BIRD</div>
+                  <div class="ic-tier-tile-price"><span class="strike">&#8369;2,500</span>&#8369;1,999</div>
+                </div>
+              </label>
+              <label class="ic-tier-tile vip">
+                <input type="radio" name="tier" value="vip" />
+                <div class="ic-tier-tile-box">
+                  <div class="ic-tier-tile-badge">VIP ACCESS</div>
+                  <div class="ic-tier-tile-price">&#8369;5,000</div>
+                </div>
+              </label>
+            </div>
+            <div class="ic-qty-row">
+              <span class="ic-qty-label">Number of tickets</span>
+              <div class="ic-qty-control">
+                <button type="button" class="ic-qty-btn" data-op="-" aria-label="Decrease quantity">&minus;</button>
+                <span class="ic-qty-value" id="ic-qty-val">1</span>
+                <input type="hidden" name="quantity" id="ic-qty-input" value="1" />
+                <button type="button" class="ic-qty-btn" data-op="+" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Details -->
+          <div class="ic-step">
+            <div class="ic-step-label"><span class="ic-step-num">2</span> YOUR DETAILS</div>
+            <div class="ic-form-group">
+              <input type="text" class="ic-form-input" name="full_name" placeholder="Full Name..." autocomplete="name" required />
+            </div>
+            <div class="ic-form-group">
+              <input type="email" class="ic-form-input" name="email" placeholder="Email Address..." autocomplete="email" required />
+            </div>
+            <div class="ic-form-group">
+              <input type="tel" class="ic-form-input" name="mobile_number" placeholder="Phone Number..." autocomplete="tel" inputmode="tel" required />
+            </div>
+          </div>
+
+          <!-- Step 3: Payment method -->
+          <div class="ic-step">
+            <div class="ic-step-label"><span class="ic-step-num">3</span> CHOOSE YOUR PAYMENT METHOD</div>
+            <p class="ic-pm-hint">Securely pay using your preferred channel.</p>
+
+            <div class="ic-pm-tabs" role="tablist">
+              <button type="button" class="ic-pm-tab active" data-cat="ewallet" role="tab">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M15 15h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                E-Wallet
+              </button>
+              <button type="button" class="ic-pm-tab" data-cat="card" role="tab">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/><path d="M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Card
+              </button>
+              <button type="button" class="ic-pm-tab" data-cat="qr" role="tab">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M20 14v3M14 20h3M20 20h1" stroke-linecap="round"/></svg>
+                QR Ph
+              </button>
+            </div>
+
+            <div class="ic-pm-list" data-group="ewallet">
+              <label class="ic-pm-row">
+                <input type="radio" name="preferred_method" value="GCASH" />
+                <span class="ic-bullet"></span>
+                <span class="ic-pm-row-name">GCash</span>
+                <span class="ic-pm-row-logo">
+                  <svg width="58" height="22" viewBox="0 0 58 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="58" height="22" rx="4" fill="#007DFE"/><text x="29" y="15.5" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="11" font-weight="900" letter-spacing="-0.3">GCash</text></svg>
+                </span>
+              </label>
+              <label class="ic-pm-row">
+                <input type="radio" name="preferred_method" value="PAYMAYA" />
+                <span class="ic-bullet"></span>
+                <span class="ic-pm-row-name">Maya</span>
+                <span class="ic-pm-row-logo">
+                  <svg width="52" height="22" viewBox="0 0 52 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="52" height="22" rx="4" fill="#17181B"/><text x="26" y="15.5" text-anchor="middle" fill="#00C36C" font-family="Arial Black, sans-serif" font-size="12" font-weight="900" letter-spacing="-0.2">maya</text></svg>
+                </span>
+              </label>
+              <label class="ic-pm-row">
+                <input type="radio" name="preferred_method" value="GRABPAY" />
+                <span class="ic-bullet"></span>
+                <span class="ic-pm-row-name">GrabPay</span>
+                <span class="ic-pm-row-logo">
+                  <svg width="62" height="22" viewBox="0 0 62 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="62" height="22" rx="4" fill="#00B14F"/><text x="31" y="15.5" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="10" font-weight="900" letter-spacing="-0.2">GrabPay</text></svg>
+                </span>
+              </label>
+            </div>
+
+            <div class="ic-pm-list" data-group="card" hidden>
+              <label class="ic-pm-row">
+                <input type="radio" name="preferred_method" value="CREDIT_CARD" />
+                <span class="ic-bullet"></span>
+                <span class="ic-pm-row-name">Credit / Debit Card</span>
+                <span class="ic-pm-row-logo">
+                  <svg width="110" height="22" viewBox="0 0 110 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="0" y="0" width="34" height="22" rx="3" fill="#1A1F71"/><text x="17" y="15" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="9" font-style="italic" font-weight="900" letter-spacing="0.5">VISA</text><rect x="38" y="0" width="34" height="22" rx="3" fill="#FFFFFF"/><circle cx="50" cy="11" r="6" fill="#EB001B"/><circle cx="60" cy="11" r="6" fill="#F79E1B" fill-opacity="0.92"/><rect x="76" y="0" width="34" height="22" rx="3" fill="#006FCF"/><text x="93" y="14" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="7" font-weight="900">AMEX</text></svg>
+                </span>
+              </label>
+            </div>
+
+            <div class="ic-pm-list" data-group="qr" hidden>
+              <label class="ic-pm-row">
+                <input type="radio" name="preferred_method" value="QRPH" />
+                <span class="ic-bullet"></span>
+                <span class="ic-pm-row-name">QR Ph</span>
+                <span class="ic-pm-row-logo">
+                  <svg width="62" height="22" viewBox="0 0 62 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="62" height="22" rx="4" fill="#FFFFFF"/><text x="31" y="15.5" text-anchor="middle" fill="#002E73" font-family="Arial Black, sans-serif" font-size="10" font-weight="900" letter-spacing="-0.1">QR Ph</text></svg>
+                </span>
+              </label>
+            </div>
+
+            <div class="ic-pm-status" id="ic-pm-status">
+              <span class="ic-loading-dots"><span class="ic-pm-dot"></span><span class="ic-pm-dot"></span><span class="ic-pm-dot"></span></span>
+              <span class="ic-ready-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              <span id="ic-pm-status-text">Waiting for e-wallet selection...</span>
+            </div>
+          </div>
+
+          <!-- Honeypot -->
+          <div class="ic-honeypot" aria-hidden="true">
+            <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
+          <div id="ic-error" class="ic-error" hidden></div>
+
+          <!-- Order total + pay -->
+          <div class="ic-order-total-row">
+            <span class="ic-order-total-label">Order Total</span>
+            <span class="ic-order-total-value" id="ic-total-val">&#8369;1,999</span>
+          </div>
+          <button type="submit" class="btn btn-primary ic-btn-pay" id="ic-btn-pay" disabled>
+            <span class="ic-btn-label">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h11l4 4v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z" stroke="currentColor" stroke-width="2"/><path d="M9 14h6M9 17h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Complete Order
+            </span>
+            <span class="ic-btn-spinner" aria-hidden="true" hidden></span>
+          </button>
+          <p class="ic-secure-note">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+            100% Secure &amp; Safe Payments &middot; Processed by Xendit
+          </p>
+        </form>
+
       </div>
     </section>
 
@@ -863,6 +1014,7 @@
   <script src="/js/utm.js"></script>
   <script src="/js/main.js"></script>
   <script src="/js/pixel-events.js"></script>
+  <script src="/js/inline-checkout.js"></script>
 
 </body>
 </html>
