@@ -297,30 +297,27 @@ def handle_by_tier(h, supabase_url, service_key):
 
 
 def handle_clicks_over_time(h, supabase_url, service_key):
-    """GET /api/report?action=clicks_over_time"""
+    """GET /api/report?action=clicks_over_time
+
+    Server-side aggregation via Postgres RPC — returns ~30 rows instead of
+    fetching every click row into Python. See supabase/migrations/
+    2026-04-23_clicks_daily_aggregation.sql for the function definition.
+    """
     if not check_auth(h):
         return
 
     try:
-        clicks = supabase_get_paginated(
+        rows = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_CLICKS}?select=clicked_at&clicked_at=gte.{_thirty_days_ago()}"
+            "rpc/new_business_normal_clicks_daily?p_days=30"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
 
-    daily_counts = defaultdict(int)
-    for row in clicks:
-        clicked_at = row.get("clicked_at", "")
-        if clicked_at:
-            # ISO timestamp: "2026-04-01T12:34:56+00:00" → take first 10 chars
-            date_str = str(clicked_at)[:10]
-            daily_counts[date_str] += 1
-
     result = [
-        {"date": date, "count": count}
-        for date, count in sorted(daily_counts.items())
+        {"date": str(r.get("date", ""))[:10], "count": int(r.get("count") or 0)}
+        for r in rows
     ]
 
     _send_json(h, 200, result)
