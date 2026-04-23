@@ -2013,6 +2013,35 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 }
 
 /* ==============================
+   MOBILE STICKY CTA (bottom bar)
+   ============================== */
+.mobile-sticky-cta { display: none; }
+@media (max-width: 767px) {
+  .mobile-sticky-cta {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    padding: 0.7rem 0.9rem calc(env(safe-area-inset-bottom, 0px) + 0.7rem);
+    background: rgba(26, 26, 46, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+  }
+  .mobile-sticky-cta .btn {
+    width: 100%;
+    padding: 0.95rem 1rem;
+    font-size: 1rem;
+    margin: 0;
+  }
+  /* Offset so the last section CTA / footer isn't hidden under the bar */
+  body { padding-bottom: 4.5rem; }
+}
+
+/* ==============================
    PRINT
    ============================== */
 @media print {
