@@ -10,8 +10,6 @@ Steps (executed in order):
 Env:
   BU_LEADS_APPS_SCRIPT_URL     (required) Apps Script web-app deployment URL for BU Leads sheet
   BREVO_API_KEY                (required) Brevo transactional email API key
-  BU_BREVO_TEMPLATE_ID_LEAD    (optional) Brevo template ID for "we'll call you" confirmation
-                                          TODO: provision this template in Brevo, then set env var
   BREVO_SENDER_EMAIL           (optional) defaults to success@exponential-university.live
   BREVO_SENDER_NAME            (optional) defaults to "Business Unlocked"
 """
@@ -25,12 +23,15 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 
 EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
+TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "emails" / "lead-confirmation.html"
+
 DEFAULT_SENDER_EMAIL = "success@exponential-university.live"
 DEFAULT_SENDER_NAME = "Business Unlocked"
-CONFIRMATION_SUBJECT = "Natanggap na ang iyong call reservation — Business Unlocked"
+CONFIRMATION_SUBJECT = "Salamat — tatawagan ka namin within 24 hours"
 
 
 # ---------------------------------------------------------------------------
@@ -80,26 +81,33 @@ def _append_lead_to_sheet(row: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Step 2: send Brevo confirmation email to the lead
+# Template rendering — simple {{var}} replacement, same pattern as register-free.py
+# ---------------------------------------------------------------------------
+def _render(template: str, vars: dict) -> str:
+    out = template
+    for k, v in vars.items():
+        out = out.replace("{{" + k + "}}", v)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Step 2: send Brevo confirmation email to the lead (inline HTML, no templateId)
 # ---------------------------------------------------------------------------
 def _send_confirmation_email(name: str, email: str) -> dict:
     api_key = os.environ.get("BREVO_API_KEY")
     if not api_key:
+        print("[register-lead] BREVO_API_KEY not set — skipping confirmation email")
         return {"ok": False, "skipped": True, "reason": "BREVO_API_KEY not set"}
 
-    template_id_raw = os.environ.get("BU_BREVO_TEMPLATE_ID_LEAD")
-    # TODO: provision the "we'll call you" Brevo template, then set BU_BREVO_TEMPLATE_ID_LEAD
-    if not template_id_raw:
-        print("[register-lead] WARNING: BU_BREVO_TEMPLATE_ID_LEAD not set — skipping confirmation email")
-        return {"ok": False, "skipped": True, "reason": "BU_BREVO_TEMPLATE_ID_LEAD not set"}
-
     try:
-        template_id = int(template_id_raw)
-    except ValueError:
-        print(f"[register-lead] WARNING: BU_BREVO_TEMPLATE_ID_LEAD is not a valid integer: {template_id_raw!r}")
-        return {"ok": False, "skipped": True, "reason": "BU_BREVO_TEMPLATE_ID_LEAD not a valid integer"}
+        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+    except Exception as e:
+        print(f"[register-lead] WARNING: template load failed: {e}")
+        return {"ok": False, "error": f"Template load failed: {e}"}
 
     first_name = name.split()[0].title() if name else "there"
+    html = _render(template, {"first_name": first_name})
+
     sender_email = os.environ.get("BREVO_SENDER_EMAIL", DEFAULT_SENDER_EMAIL)
     sender_name = os.environ.get("BREVO_SENDER_NAME", DEFAULT_SENDER_NAME)
 
@@ -108,9 +116,8 @@ def _send_confirmation_email(name: str, email: str) -> dict:
         {
             "sender": {"email": sender_email, "name": sender_name},
             "to": [{"email": email, "name": name}],
-            "templateId": template_id,
-            "params": {"FIRSTNAME": first_name, "NAME": name},
             "subject": CONFIRMATION_SUBJECT,
+            "htmlContent": html,
         },
         headers={
             "api-key": api_key,
