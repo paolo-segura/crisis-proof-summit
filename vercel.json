@@ -28,6 +28,7 @@
   ],
   "crons": [
     { "path": "/api/sync-payments", "schedule": "*/15 * * * *" },
+    { "path": "/api/export-to-sheets", "schedule": "*/10 * * * *" },
     { "path": "/api/cron-webinar-recap", "schedule": "0 1 * * *" },
     { "path": "/api/cron-webinar-reminders", "schedule": "0 10 * * *" },
     { "path": "/api/cron-webinar-30min", "schedule": "30 10 * * *" },
