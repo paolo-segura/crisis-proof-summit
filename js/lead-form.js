@@ -27,7 +27,7 @@
     submitBtn.disabled = loading;
     submitBtn.textContent = loading
       ? 'Sending...'
-      : 'Reserve a Call → Magkausap Tayo';
+      : 'Inquire Now →';
   }
 
   // Collect UTM params from the current URL
