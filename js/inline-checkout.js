@@ -11,8 +11,12 @@
   var form = document.getElementById('inline-checkout-form');
   if (!form) return;
 
-  // Keep in sync with api/create-invoice.py TIERS
-  var PRICES = { early_bird: 1999, regular: 2500, vip: 5000 };
+  // Keep in sync with api/create-invoice.py TIERS. Zoom tiers mirror the
+  // in-person price; the UI derives _zoom suffix from the access_mode radio.
+  var PRICES = {
+    early_bird: 1999, regular: 2500, vip: 5000,
+    early_bird_zoom: 1999, regular_zoom: 2500
+  };
   var CATEGORY_LABELS = { ewallet: 'e-wallet', card: 'card', qr: 'QR Ph' };
   var EMAIL_PATTERN = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
   var TABLE_CLICKS = 'new_business_normal_clicks';  // same table main.js uses
@@ -22,9 +26,21 @@
   function $(id) { return document.getElementById(id); }
   function fmt(n) { return '₱' + Number(n).toLocaleString('en-PH'); }
 
+  function currentAccessMode() {
+    var r = form.querySelector('input[name="access_mode"]:checked');
+    return r ? r.value : 'in_person';
+  }
+
+  // Derived tier = base radio value + _zoom suffix when access_mode=zoom,
+  // except for VIP which is in-person-only. Sent to /api/create-invoice.
   function currentTier() {
     var r = form.querySelector('input[name="tier"]:checked');
-    return r ? r.value : 'early_bird';
+    var base = r ? r.value : 'early_bird';
+    if (base === 'vip') return 'vip';
+    if (currentAccessMode() === 'zoom' && (base === 'early_bird' || base === 'regular')) {
+      return base + '_zoom';
+    }
+    return base;
   }
 
   function currentMethod() {
@@ -58,6 +74,39 @@
   // ---- tier changes ----
   form.querySelectorAll('input[name="tier"]').forEach(function (r) {
     r.addEventListener('change', updateTotal);
+  });
+
+  // ---- access mode (In-Person / Zoom) ----
+  // Zoom hides/disables VIP since VIP is in-person-only. If VIP was selected
+  // when user switches to Zoom, fall back to Early Bird so we never submit an
+  // impossible combo.
+  function applyAccessMode() {
+    var mode = currentAccessMode();
+    // Toggle `.active` class on the labels for styling
+    form.querySelectorAll('.ic-access-mode-option').forEach(function (lbl) {
+      var inp = lbl.querySelector('input[name="access_mode"]');
+      lbl.classList.toggle('active', !!(inp && inp.checked));
+    });
+    var vipTile = form.querySelector('[data-vip-tile]');
+    var vipNote = form.querySelector('[data-vip-note]');
+    var vipRadio = form.querySelector('input[name="tier"][value="vip"]');
+    var ebRadio = form.querySelector('input[name="tier"][value="early_bird"]');
+    if (mode === 'zoom') {
+      if (vipTile) vipTile.classList.add('disabled');
+      if (vipNote) vipNote.hidden = false;
+      if (vipRadio) vipRadio.disabled = true;
+      if (vipRadio && vipRadio.checked && ebRadio) {
+        ebRadio.checked = true;
+      }
+    } else {
+      if (vipTile) vipTile.classList.remove('disabled');
+      if (vipNote) vipNote.hidden = true;
+      if (vipRadio) vipRadio.disabled = false;
+    }
+    updateTotal();
+  }
+  form.querySelectorAll('input[name="access_mode"]').forEach(function (r) {
+    r.addEventListener('change', applyAccessMode);
   });
 
   // ---- quantity stepper ----
@@ -245,6 +294,7 @@
   }
 
   // ---- initial paint ----
+  applyAccessMode();
   updateTotal();
   refreshStatus('ewallet');
 })();

@@ -12,7 +12,14 @@
   var conversionChart = null;
 
   // Storage values from DB → human-readable display labels
-  var TIER_LABELS = { early_bird: 'Early Bird', regular: 'Regular', vip: 'VIP', other: 'Other' };
+  var TIER_LABELS = {
+    early_bird: 'Early Bird',
+    regular: 'Regular',
+    vip: 'VIP',
+    early_bird_zoom: 'Early Bird (Zoom)',
+    regular_zoom: 'Regular (Zoom)',
+    other: 'Other',
+  };
 
   function tierLabel(t) { return TIER_LABELS[t] || (t ? String(t) : ''); }
 

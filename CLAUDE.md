@@ -59,3 +59,18 @@ vercel.json         — Vercel config
 - Event poster: `../crisis-proof-sales-page/event-poster-no-qr-new-2.png`
 - Rates image: `../crisis-proof-sales-page/rates-and-inclusions.jpg`
 - Brand deck: `../crisis-proof-sales-page/The_New_Business_Normal_Summit_Brand_Deck-1.pdf`
+
+## Vercel Env Vars — Zoom ticket launch (added 2026-04-23)
+
+These must be set in Vercel before deploying the `feature/messaging-zoom-v2` branch:
+
+| Env var | Required? | Notes |
+|---|---|---|
+| `BU_ZOOM_JOIN_URL` | Yes (ops) | Full Zoom join URL for the May 9 live stream. Until provisioned, Zoom buyers receive a "link coming 24h before" fallback — email still sends, does NOT crash. |
+| `BREVO_API_KEY` | Already set | Existing var — no change needed. If absent, all confirmation emails are skipped (logged). |
+| `BREVO_SENDER_EMAIL` | Already set | Existing var — defaults to `hello@exponential-university.live`. |
+| `BREVO_SENDER_NAME` | Already set | Existing var — defaults to `Business Unlocked`. |
+
+The Zoom confirmation email template is at `emails/post-purchase-zoom.html`.
+The in-person confirmation email template is at `emails/post-purchase-inperson.html`.
+Both are rendered and sent inline by `api/xendit-webhook.py` on every PAID event.

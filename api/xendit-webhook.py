@@ -18,12 +18,20 @@ Required env vars:
   - XENDIT_CALLBACK_TOKEN
   - SUPABASE_URL
   - SUPABASE_SERVICE_KEY
+
+Optional (for post-purchase confirmation email):
+  - BREVO_API_KEY           — if unset, email send is skipped (logged)
+  - BREVO_SENDER_EMAIL      — defaults to hello@exponential-university.live
+  - BREVO_SENDER_NAME       — defaults to Business Unlocked
+  - BU_ZOOM_JOIN_URL        — Zoom join URL for Zoom ticket holders; if unset,
+                              email falls back to a "link coming 24h before" note
 """
 
 from http.server import BaseHTTPRequestHandler
 import hmac
 import json
 import os
+import pathlib
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -31,6 +39,29 @@ import urllib.request
 
 PURCHASES_TABLE = "new_business_normal_purchases"
 PARTICIPANTS_TABLE = "new_business_normal_participants"
+
+# ---------------------------------------------------------------------------
+# Post-purchase email constants
+# ---------------------------------------------------------------------------
+
+_TEMPLATE_DIR = pathlib.Path(__file__).resolve().parent.parent / "emails"
+
+# Tier codes that indicate a Zoom (online-only) purchase.
+# Using explicit set — do NOT use substring matching.
+_ZOOM_TIER_CODES = {"EB_ZOOM", "REG_ZOOM"}
+
+# Mapping from tier key -> (label, code) so we can resolve from either form.
+# Kept in sync with create-invoice.py TIERS dict.
+_TIER_MAP = {
+    "early_bird":      ("Early Bird (In-Person)", "EB"),
+    "regular":         ("Regular (In-Person)",    "REG"),
+    "vip":             ("VIP",                    "VIP"),
+    "early_bird_zoom": ("Early Bird (Zoom)",       "EB_ZOOM"),
+    "regular_zoom":    ("Regular (Zoom)",          "REG_ZOOM"),
+}
+
+_DEFAULT_SENDER_EMAIL = "hello@exponential-university.live"
+_DEFAULT_SENDER_NAME  = "Business Unlocked"
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +169,125 @@ def _upsert_purchase(row):
 
 
 # ---------------------------------------------------------------------------
+# Post-purchase confirmation email
+# ---------------------------------------------------------------------------
+
+def _render_template(template_str, tokens):
+    """Minimal {{key}} token replacement — same pattern as register-free.py."""
+    result = template_str
+    for key, value in tokens.items():
+        result = result.replace("{{" + key + "}}", value)
+    return result
+
+
+def _zoom_join_block(zoom_url):
+    """Return the HTML fragment for the Join Zoom button, or a fallback note."""
+    if zoom_url:
+        return (
+            '<a href="{url}" style="display:inline-block; padding:12px 24px; '
+            'background-color:#F59E0B; color:#0F1B2E; font-size:14px; font-weight:700; '
+            'border-radius:999px; text-decoration:none;">Join Zoom →</a>'
+        ).format(url=zoom_url)
+    else:
+        return (
+            '<p style="margin:0; font-size:14px; color:#CBD5E1; line-height:1.55;">'
+            'Zoom link will be sent 24 hours before the summit. '
+            'Keep an eye on your inbox.</p>'
+        )
+
+
+def _send_confirmation_email(email, full_name, tier_key):
+    """Fire the appropriate post-purchase email via Brevo.
+
+    Routing:
+      - Zoom tiers (EB_ZOOM, REG_ZOOM) -> post-purchase-zoom.html
+      - In-person tiers + unknown       -> post-purchase-inperson.html (safe default)
+
+    Returns a dict with ok/skipped/error for logging only — never raises.
+    """
+    api_key = os.environ.get("BREVO_API_KEY")
+    if not api_key:
+        print("[xendit-webhook] BREVO_API_KEY not set — skipping confirmation email", flush=True)
+        return {"ok": False, "skipped": True, "reason": "BREVO_API_KEY not set"}
+
+    if not email:
+        return {"ok": False, "skipped": True, "reason": "no email address"}
+
+    # Resolve tier metadata; unknown tier falls through to in-person (safe default)
+    tier_info = _TIER_MAP.get(tier_key)
+    if tier_info:
+        tier_label, tier_code = tier_info
+    else:
+        print(f"[xendit-webhook] unknown tier '{tier_key}' — defaulting to in-person email", flush=True)
+        tier_label = "Event Ticket"
+        tier_code = ""
+
+    is_zoom = tier_code in _ZOOM_TIER_CODES
+
+    # Select and load the right template
+    template_name = "post-purchase-zoom.html" if is_zoom else "post-purchase-inperson.html"
+    template_path = _TEMPLATE_DIR / template_name
+    try:
+        template_str = template_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        print(f"[xendit-webhook] template load failed ({template_name}): {exc}", flush=True)
+        return {"ok": False, "error": f"template load failed: {exc}"}
+
+    first_name = full_name.split()[0].title() if full_name else "there"
+
+    tokens = {
+        "name":       first_name,
+        "tier_label": tier_label,
+    }
+
+    if is_zoom:
+        zoom_url = os.environ.get("BU_ZOOM_JOIN_URL", "")
+        if not zoom_url:
+            print("[xendit-webhook] BU_ZOOM_JOIN_URL not set — using fallback text in Zoom email", flush=True)
+        tokens["zoom_join_block"] = _zoom_join_block(zoom_url or "")
+
+    html = _render_template(template_str, tokens)
+
+    sender_email = os.environ.get("BREVO_SENDER_EMAIL", _DEFAULT_SENDER_EMAIL)
+    sender_name  = os.environ.get("BREVO_SENDER_NAME",  _DEFAULT_SENDER_NAME)
+
+    subject = "You're In — BUSINESS UNLOCKED · May 9, 2026"
+
+    payload = json.dumps({
+        "sender": {"email": sender_email, "name": sender_name},
+        "to": [{"email": email, "name": full_name or email}],
+        "subject": subject,
+        "htmlContent": html,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=payload,
+        method="POST",
+    )
+    req.add_header("api-key", api_key)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            print(f"[xendit-webhook] confirmation email sent to {email} "
+                  f"tier={tier_key} zoom={is_zoom} status={resp.status}", flush=True)
+            return {"ok": True, "status": resp.status, "body": body[:200]}
+    except urllib.error.HTTPError as exc:
+        try:
+            err_body = exc.read().decode("utf-8", errors="replace")[:300]
+        except Exception:
+            err_body = ""
+        print(f"[xendit-webhook] Brevo error {exc.code}: {err_body}", flush=True)
+        return {"ok": False, "status": exc.code, "error": err_body}
+    except Exception as exc:  # noqa: BLE001
+        print(f"[xendit-webhook] email send error: {type(exc).__name__}: {exc}", flush=True)
+        return {"ok": False, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
 # Event handling
 # ---------------------------------------------------------------------------
 
@@ -217,6 +367,13 @@ def _handle_event(body):
 
     print(f"[xendit-webhook] upserted order={external_id} status={internal_status} "
           f"participant_id={participant_id} method={match_method}", flush=True)
+
+    # Send post-purchase confirmation email on PAID. Email errors are logged
+    # but never bubble up — Xendit must receive 200 to stop retrying.
+    if internal_status == "PAID":
+        tier_key = existing.get("ticket_tier") or row.get("ticket_tier", "")
+        full_name = existing.get("full_name") or ""
+        _send_confirmation_email(email, full_name, tier_key)
 
     return 200, {"ok": True, "order_id": external_id, "status": internal_status}
 

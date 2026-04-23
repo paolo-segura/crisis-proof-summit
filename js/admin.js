@@ -43,12 +43,24 @@ function formatDate(dateStr) {
 }
 
 function tierLabel(tier) {
-  const map = { early_bird: 'Early Bird', regular: 'Regular', vip: 'VIP' };
+  const map = {
+    early_bird: 'Early Bird',
+    regular: 'Regular',
+    vip: 'VIP',
+    early_bird_zoom: 'Early Bird (Zoom)',
+    regular_zoom: 'Regular (Zoom)',
+  };
   return map[tier] || tier;
 }
 
 function tierClass(tier) {
-  const map = { early_bird: 'early-bird', regular: 'regular', vip: 'vip' };
+  const map = {
+    early_bird: 'early-bird',
+    regular: 'regular',
+    vip: 'vip',
+    early_bird_zoom: 'early-bird-zoom',
+    regular_zoom: 'regular-zoom',
+  };
   return map[tier] || '';
 }
 
@@ -458,3 +470,11 @@ document.getElementById('utm-table').addEventListener('click', (e) => {
   loginScreen.style.display = 'flex';
   passwordInput.focus();
 })();
+
+// TODO: when BU Leads sheet is live, merge closed_offline rows into sales totals
+// with email/phone dedupe against Supabase new_business_normal_purchases.
+// See plan: ~/.claude/plans/good-morning-claude-so-modular-meerkat.md — "Dashboard merge" section.
+// Steps:
+//  1. Fetch BU Leads sheet rows where status === 'closed_offline' via a new /api/report-leads endpoint.
+//  2. Dedupe: if a sheet row's email OR normalized phone matches a Supabase row, skip it (already counted).
+//  3. Add remaining rows to the totals breakdown and the sales table under a "Closed Offline" label.

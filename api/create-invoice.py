@@ -34,10 +34,17 @@ EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$"
 
 # Tier config (amount in PHP per ticket, label shown on Xendit's hosted page,
 # short code used in the human-readable order_id).
+#
+# Zoom tiers mirror the in-person prices (same event, different delivery).
+# Separate SKUs so Supabase + admin dashboards can segment in-person vs
+# online attendance without an extra `access_mode` column. VIP stays
+# in-person only per 2026-04-23 decision.
 TIERS = {
-    "early_bird": {"amount": 1999, "label": "Early Bird", "code": "EB"},
-    "regular":    {"amount": 2500, "label": "Regular",    "code": "REG"},
-    "vip":        {"amount": 5000, "label": "VIP",        "code": "VIP"},
+    "early_bird":      {"amount": 1999, "label": "Early Bird (In-Person)", "code": "EB"},
+    "regular":         {"amount": 2500, "label": "Regular (In-Person)",    "code": "REG"},
+    "vip":             {"amount": 5000, "label": "VIP",                    "code": "VIP"},
+    "early_bird_zoom": {"amount": 1999, "label": "Early Bird (Zoom)",      "code": "EB_ZOOM"},
+    "regular_zoom":    {"amount": 2500, "label": "Regular (Zoom)",         "code": "REG_ZOOM"},
 }
 
 EVENT_NAME = "Business Unlocked Summit"

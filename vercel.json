@@ -12,7 +12,9 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/participant-details", "destination": "/participant-details.html" },
     { "source": "/free", "destination": "/free.html" },
-    { "source": "/free/thank-you", "destination": "/free-thank-you.html" }
+    { "source": "/free/thank-you", "destination": "/free-thank-you.html" },
+    { "source": "/business-unlocked", "destination": "/business-unlocked.html" },
+    { "source": "/business-unlocked/thank-you", "destination": "/business-unlocked-thank-you.html" }
   ],
   "headers": [
     {
