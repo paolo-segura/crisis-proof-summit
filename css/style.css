@@ -1788,6 +1788,48 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   font-weight: 500;
 }
 
+/* Brand logos strip — credibility row under speakers */
+.brand-logos-heading {
+  font-family: var(--font-subhead);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gray-500);
+  text-align: center;
+  margin: 4rem auto 2rem;
+}
+.brand-logos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem 1rem;
+  align-items: center;
+  justify-items: center;
+  max-width: 320px;
+  margin: 0 auto;
+}
+.brand-logo-img {
+  max-height: 44px;
+  max-width: 130px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(100%);
+  opacity: 0.55;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+.brand-logo-img:hover {
+  filter: grayscale(0);
+  opacity: 1;
+}
+@media (min-width: 768px) {
+  .brand-logos-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2.5rem 2rem;
+    max-width: 960px;
+  }
+  .brand-logo-img { max-height: 52px; max-width: 150px; }
+}
+
 @media (min-width: 768px) {
   .speakers-grid-confirmed { grid-template-columns: repeat(2, 1fr); }
 }
