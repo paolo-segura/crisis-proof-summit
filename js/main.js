@@ -272,6 +272,11 @@ function initScrollAnimations() {
   const animatedEls = document.querySelectorAll('.animate-in');
   if (animatedEls.length === 0) return;
 
+  // threshold:0 + rootMargin bottom:-10% => fires as soon as the top of the
+  // section enters the viewport. A threshold like 0.1 BREAKS sections that are
+  // taller than ~10x the viewport height (e.g. #speakers on mobile, ~8000px
+  // tall on an iPhone SE) because 10% of the target can never be on screen
+  // at once, so .visible is never added and opacity stays at 0.
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -281,10 +286,20 @@ function initScrollAnimations() {
         }
       });
     },
-    { threshold: 0.1 }
+    { threshold: 0, rootMargin: '0px 0px -10% 0px' }
   );
 
   animatedEls.forEach((el) => observer.observe(el));
+
+  // Safety net: if a section is already above the fold on load (or if the
+  // observer never fires for any reason), reveal it on first scroll/touch.
+  const fallback = () => {
+    animatedEls.forEach((el) => el.classList.add('visible'));
+    window.removeEventListener('scroll', fallback);
+    window.removeEventListener('touchstart', fallback);
+  };
+  window.addEventListener('scroll', fallback, { once: true, passive: true });
+  window.addEventListener('touchstart', fallback, { once: true, passive: true });
 }
 
 

@@ -1,5 +1,26 @@
 # BUSINESS UNLOCKED — Project Instructions
 
+## ⚠️ MANDATORY PRE-PUSH CHECKLIST — MOBILE SPEAKERS REGRESSION
+
+**This section has silently disappeared on mobile MULTIPLE times. Before any `git push` that touches `index.html`, `css/style.css`, `js/main.js`, or anything that could affect layout/animation — you MUST verify:**
+
+1. Open `/the-new-business-normal` at mobile widths (320 / 375 / 414 / 767px). DevTools device toolbar is fine.
+2. Scroll to `#speakers`. Confirm ALL of the following render fully visible (no blank area, no clipped cards):
+   - 🏛️ **The Legacy Builders** — 3 cards (Jorge, Paco, Gina)
+   - 💻 **The Digital Natives** — 6 cards (Steve, Kristine, Jeff, Charlie, Nani, Migs)
+   - 🤖 **The AI Edge** — 1 card (Jay Jazmines)
+3. Each card shows: photo (≈200×290 on mobile), name, title, and full hook paragraph. Photo must NOT overflow or collapse to 0 height.
+4. Confirm the section is actually opacity:1 (the `.animate-in` class flips to `.visible` via IntersectionObserver — if JS breaks, the whole section stays opacity:0 and looks "missing").
+
+**Known regression causes to check first:**
+- **Root cause of the Apr 24, 2026 regression (DO NOT reintroduce):** `initScrollAnimations` in `js/main.js` used `IntersectionObserver` with `threshold: 0.1`. `#speakers` after the 3-bucket restructure is ~8000px tall on mobile — 10% of 8000 is 800px, but a mobile viewport is only 568–844px. The threshold could never be met, so `.visible` was never added, so `.animate-in` stayed at `opacity:0`. Fix: `threshold: 0, rootMargin: '0px 0px -10% 0px'` + a scroll/touch fallback that force-reveals all `.animate-in` elements. **If anyone changes `threshold` on that observer, the speakers section dies on mobile again.**
+- A new rule under `@media (max-width: 767px)` that accidentally sets `display: none`, `height: 0`, `overflow: hidden` with clipped children, or `grid-template-columns: 0`.
+- `.speakers-grid-single` (AI Edge bucket) leaking its desktop-only `grid-template-columns: 260px 1fr` rule to mobile — AI Edge card must stack vertically on mobile like the others.
+- Adjacent section (brand logos strip, stakes frame) growing tall enough to push `#speakers` off a short-viewport scroll, combined with `overflow: hidden` on an ancestor.
+- Browser cache on Paolo's phone — when reporting "fixed", do a hard reload / clear cache before confirming.
+
+**If you regress this again, the rule is: revert the push, then fix. Do NOT patch forward.**
+
 ## Overview
 Two parallel workstreams in this folder:
 1. **Sales page** — one-page checkout site with Hormozi/Suby conversion funnel
@@ -38,7 +59,7 @@ pancake, abundance, rtd, rdr, infotxt, gencys, prime, expou, lumina, bamboo, uni
 - Supabase anon key for inserts only (RLS insert-only policy), service-role key server-side only
 - All emails use inline CSS, 600px max-width, branded dark/gold/teal theme
 - Countdown timer must use PHT (UTC+8) timezone
-- Speakers section hidden by default (no speakers confirmed yet)
+- Speakers section (`#speakers`) is LIVE with 10 confirmed speakers across 3 buckets — see the pre-push checklist at the top of this file. Do NOT hide it.
 
 ## File Structure
 ```
