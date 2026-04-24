@@ -1,0 +1,34 @@
+# Generated production kits — MB+ bundles not needed by the site or serverless fns
+A1 PRODUCED-ADS.zip
+A1 PRODUCED/
+A1\ PRODUCED/
+A1\ PRODUCED-ADS.zip
+
+# Raw generated creatives — served from Canva/Drive, not the Vercel edge
+assets/generated/
+video-ads/
+
+# Local-only env pulls (still gitignored but keep them out of the upload)
+.env.production
+.env.vercel
+.env
+
+# Local dev artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+**/.DS_Store
+
+# Worktrees + scratch
+.claude/
+tests/
+docs/
+
+# Large raw source kits
+"*.zip"
+*.zip
+*.mp4
+*.webm
+*.mov
+*.MOV
