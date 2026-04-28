@@ -472,11 +472,14 @@ def supabase_fetch_unmatched_purchases(days=7):
     import datetime
     cutoff = (datetime.datetime.now(datetime.timezone.utc)
               - datetime.timedelta(days=days)).isoformat()
+    # url-encode the cutoff: PostgREST receives the path raw, and the `+` in
+    # the `+00:00` UTC offset would otherwise decode to a space, producing
+    # `2026-04-21T00:38:36.506237 00:00` and a 22007 invalid-timestamp 400.
     path = (
         f"{PURCHASES_TABLE}"
         f"?select=order_id,email,mobile,paid_at"
         f"&participant_id=is.null"
-        f"&paid_at=gte.{cutoff}"
+        f"&paid_at=gte.{quote(cutoff, safe='')}"
     )
     return _supabase_request("GET", path) or []
 
