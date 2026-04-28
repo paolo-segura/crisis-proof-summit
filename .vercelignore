@@ -32,3 +32,9 @@ docs/
 *.webm
 *.mov
 *.MOV
+# …but allow these specific asset videos used by the live page
+!assets/sir-billy.mp4
+!assets/hero-bg-web.mp4
+!assets/hero-bg-web.webm
+!assets/event-poster-final.mp4
+!assets/event-poster-final.webm
