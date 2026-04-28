@@ -273,6 +273,11 @@ def _parse_request(raw_body):
     mobile = _normalize_mobile(data.get("mobile_number") or data.get("mobile"))
     if not full_name:
         return None, "Missing required field: full_name."
+    # Xendit requires a non-empty surname; we also want full names on the
+    # attendee list. Reject anything that's not at least two whitespace-
+    # separated words so the user gets a clear message instead of a 502.
+    if len(full_name.split()) < 2:
+        return None, "Please enter your complete name (first and last)."
     if not email or not EMAIL_PATTERN.match(email):
         return None, "Invalid email address."
     if not mobile:
@@ -321,19 +326,6 @@ def _create_invoice(parsed):
 
     first, last = _split_name(parsed["full_name"])
 
-    # Xendit's customer.surname is `any.empty(false)` — sending it as "" 400s
-    # the whole invoice creation. Many Filipino buyers enter a single-word
-    # full name (just "Jay", "Migs"), which used to crash checkout. Solution:
-    # only include `surname` in the customer dict if non-empty. Xendit treats
-    # the field as optional when omitted entirely.
-    customer = {
-        "given_names": first,
-        "email": parsed["email"],
-        "mobile_number": parsed["mobile"],
-    }
-    if last:
-        customer["surname"] = last
-
     qty_suffix = f" × {quantity}" if quantity > 1 else ""
     xendit_payload = {
         "external_id": order_id,
@@ -343,7 +335,12 @@ def _create_invoice(parsed):
         "currency": "PHP",
         "description": f"{EVENT_NAME} — {tier_cfg['label']} Ticket{qty_suffix} (May 9, 2026)",
         "payer_email": parsed["email"],
-        "customer": customer,
+        "customer": {
+            "given_names": first,
+            "surname": last,  # _parse_request guarantees this is non-empty
+            "email": parsed["email"],
+            "mobile_number": parsed["mobile"],
+        },
         "customer_notification_preference": {"invoice_paid": ["email"]},
         "success_redirect_url": success_url,
         "failure_redirect_url": failure_url,
