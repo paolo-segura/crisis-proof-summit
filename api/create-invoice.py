@@ -321,6 +321,19 @@ def _create_invoice(parsed):
 
     first, last = _split_name(parsed["full_name"])
 
+    # Xendit's customer.surname is `any.empty(false)` — sending it as "" 400s
+    # the whole invoice creation. Many Filipino buyers enter a single-word
+    # full name (just "Jay", "Migs"), which used to crash checkout. Solution:
+    # only include `surname` in the customer dict if non-empty. Xendit treats
+    # the field as optional when omitted entirely.
+    customer = {
+        "given_names": first,
+        "email": parsed["email"],
+        "mobile_number": parsed["mobile"],
+    }
+    if last:
+        customer["surname"] = last
+
     qty_suffix = f" × {quantity}" if quantity > 1 else ""
     xendit_payload = {
         "external_id": order_id,
@@ -330,12 +343,7 @@ def _create_invoice(parsed):
         "currency": "PHP",
         "description": f"{EVENT_NAME} — {tier_cfg['label']} Ticket{qty_suffix} (May 9, 2026)",
         "payer_email": parsed["email"],
-        "customer": {
-            "given_names": first,
-            "surname": last,
-            "email": parsed["email"],
-            "mobile_number": parsed["mobile"],
-        },
+        "customer": customer,
         "customer_notification_preference": {"invoice_paid": ["email"]},
         "success_redirect_url": success_url,
         "failure_redirect_url": failure_url,
