@@ -293,6 +293,12 @@ def _send_confirmation_email(email, full_name, tier_key):
 
 _HANDLED_STATUSES = {"PAID", "SETTLED", "EXPIRED", "FAILED"}
 
+# All BU invoices created via /api/create-invoice carry this prefix
+# (see _generate_order_id in create-invoice.py). Anything else hitting this
+# webhook is foreign — most commonly Scale Your Org / GHL funnels that share
+# the same Xendit account and fire to the same callback URL.
+_BU_ORDER_PREFIX = "BU-"
+
 
 def _status_to_internal(xendit_status):
     s = (xendit_status or "").upper()
@@ -316,6 +322,25 @@ def _handle_event(body):
     internal_status = _status_to_internal(status)
 
     existing = _fetch_purchase_by_order_id(external_id) or {}
+
+    # Foreign-order guard: if the order_id wasn't created by our
+    # /api/create-invoice (no BU- prefix) AND we have no PENDING row for it,
+    # this is a different product on the same Xendit account. 200 OK so
+    # Xendit stops retrying, but no Supabase write — the row never enters
+    # BU's purchases table and our reporting stays clean.
+    #
+    # We accept TXN-* etc. when `existing` IS populated because that means a
+    # legacy GHL row (synced via sync_payments.py before Apr 22) genuinely
+    # belongs to BU and a late webhook event for it should still update
+    # status/paid_at.
+    if not external_id.startswith(_BU_ORDER_PREFIX) and not existing:
+        print(
+            f"[xendit-webhook] foreign order ignored: order={external_id} "
+            f"status={status} amount={body.get('amount')} "
+            f"channel={body.get('payment_channel') or body.get('payment_method')}",
+            flush=True,
+        )
+        return 200, {"ok": True, "note": "foreign order ignored", "order_id": external_id}
     email = (body.get("payer_email") or existing.get("email") or "").lower()
     mobile = existing.get("mobile") or ""
     session_id = existing.get("session_id")
