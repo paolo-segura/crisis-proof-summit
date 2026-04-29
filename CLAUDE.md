@@ -6,9 +6,10 @@
 
 1. Open `/the-new-business-normal` at mobile widths (320 / 375 / 414 / 767px). DevTools device toolbar is fine.
 2. Scroll to `#speakers`. Confirm ALL of the following render fully visible (no blank area, no clipped cards):
-   - 🏛️ **The Legacy Builders** — 3 cards (Jorge, Paco, Gina)
-   - 💻 **The Digital Natives** — 6 cards (Steve, Kristine, Jeff, Charlie, Nani, Migs)
+   - 🏛️ **The Legacy Builders** — 4 cards (Jorge, Paco, Gina, Jojo)
+   - 💻 **The Digital Natives** — 7 cards (Steve, Kristine, Jonah, Jeff, Charlie, Nani, Migs)
    - 🤖 **The AI Edge** — 1 card (Jay Jazmines)
+   - Total: 12 speakers (in `index.html` they render as one flat grid; in `business-unlocked.html` they render in three bucket grids)
 3. Each card shows: photo (≈200×290 on mobile), name, title, and full hook paragraph. Photo must NOT overflow or collapse to 0 height.
 4. Confirm the section is actually opacity:1 (the `.animate-in` class flips to `.visible` via IntersectionObserver — if JS breaks, the whole section stays opacity:0 and looks "missing").
 
@@ -59,7 +60,7 @@ pancake, abundance, rtd, rdr, infotxt, gencys, prime, expou, lumina, bamboo, uni
 - Supabase anon key for inserts only (RLS insert-only policy), service-role key server-side only
 - All emails use inline CSS, 600px max-width, branded dark/gold/teal theme
 - Countdown timer must use PHT (UTC+8) timezone
-- Speakers section (`#speakers`) is LIVE with 10 confirmed speakers across 3 buckets — see the pre-push checklist at the top of this file. Do NOT hide it.
+- Speakers section (`#speakers`) is LIVE with 12 confirmed speakers across 3 buckets — see the pre-push checklist at the top of this file. Do NOT hide it.
 
 ## File Structure
 ```
