@@ -15,7 +15,7 @@ from pathlib import Path
 
 BASE_URL = "https://exponential-university.live"
 MAIN_EVENT_URL = "https://www.exponential-university.live/the-new-business-normal"
-ZOOM_URL = "https://us06web.zoom.us/j/82900398611?pwd=iP8tYUqpXBY5Nzo4vPm4EUFWbDn4wF.1"
+ZOOM_URL = "https://us06web.zoom.us/j/85067048850?pwd=QBVvZeNpuKRlTIbGdau3Qrua5lQuaw.1"
 
 DEFAULT_SENDER_EMAIL = "success@exponential-university.live"
 DEFAULT_SENDER_NAME = "Business Unlocked"
