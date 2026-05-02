@@ -488,6 +488,35 @@
       color: var(--teal);
     }
 
+    /* Manual / off-platform tickets — dimmer, distinct from online tiers
+       so the eye doesn't conflate the two when scanning the table. */
+    .tier-badge.manual {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+    }
+
+    .tier-section td {
+      padding-top: 14px;
+      padding-bottom: 6px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .tier-subtotal td {
+      background: rgba(232, 234, 240, 0.04);
+      font-size: 13px;
+    }
+
+    .tier-grand-total td {
+      background: rgba(13, 148, 136, 0.08);
+      font-size: 14px;
+      border-top: 2px solid var(--teal);
+    }
+
     /* ─── CHART ────────────────────────────────────── */
     .chart-card {
       background: var(--card);
@@ -781,6 +810,33 @@
       </div>
     </div>
 
+    <!-- Ticket Tier Table — placed right after summary cards so the
+         tier-by-tier headcount (incl. manual / off-platform sales) is the
+         first detail anyone sees after the KPIs. -->
+    <div class="section-title">Ticket Tier Breakdown</div>
+    <div class="table-wrap">
+      <table id="tier-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Count</th>
+            <th>Revenue</th>
+            <th>% of Total</th>
+          </tr>
+        </thead>
+        <tbody id="tier-table-body">
+          <tr>
+            <td colspan="4">
+              <div class="empty-state" style="display:block">
+                <span class="empty-icon">🎫</span>
+                <p>No ticket data yet.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Conversion Funnel -->
     <div id="stat-conversion">
       <h3>Conversion Funnel</h3>
@@ -830,31 +886,6 @@
               <div class="empty-state" style="display:block">
                 <span class="empty-icon">📊</span>
                 <p>No data yet. Check back once tracking is live.</p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Ticket Tier Table -->
-    <div class="section-title">Ticket Tier Breakdown</div>
-    <div class="table-wrap">
-      <table id="tier-table">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th>Count</th>
-            <th>Revenue</th>
-            <th>% of Total</th>
-          </tr>
-        </thead>
-        <tbody id="tier-table-body">
-          <tr>
-            <td colspan="4">
-              <div class="empty-state" style="display:block">
-                <span class="empty-icon">🎫</span>
-                <p>No ticket data yet.</p>
               </div>
             </td>
           </tr>

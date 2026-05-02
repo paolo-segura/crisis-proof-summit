@@ -49,6 +49,13 @@ function tierLabel(tier) {
     vip: 'VIP',
     early_bird_zoom: 'Early Bird (Zoom)',
     regular_zoom: 'Regular (Zoom)',
+    // Manual / off-platform tiers (synced from "BUS: Leads" sheet)
+    warm: 'Warm Leads',
+    bulk_1000: 'Bulk (₱1,000)',
+    bulk_1500: 'Bulk (₱1,500)',
+    ggn: 'Grit & Grace Network',
+    df_sp: 'DF/SP Distributors',
+    organic: 'Organic',
   };
   return map[tier] || tier;
 }
@@ -60,6 +67,12 @@ function tierClass(tier) {
     vip: 'vip',
     early_bird_zoom: 'early-bird-zoom',
     regular_zoom: 'regular-zoom',
+    warm: 'manual',
+    bulk_1000: 'manual',
+    bulk_1500: 'manual',
+    ggn: 'manual',
+    df_sp: 'manual',
+    organic: 'manual',
   };
   return map[tier] || '';
 }
@@ -171,6 +184,9 @@ function setLoading(loading) {
 async function fetchSummary() {
   const data = await apiFetch('summary');
 
+  // Total Sales / Total Revenue here are ONLINE-ONLY (server filters out
+  // manual rows). Manual sales appear separately in the tier breakdown so
+  // the headline number can't drift from upstream sheet edits.
   const visits  = data.total_visits  || 0;
   const clicks  = data.total_clicks  || 0;
   const sales   = data.total_sales   || 0;
@@ -300,20 +316,69 @@ async function fetchByTier() {
     return;
   }
 
-  const totalRevenue = rows.reduce((sum, r) => sum + (r.revenue || 0), 0);
+  // Split into online vs manual. Manual = client-logged sales from the
+  // "BUS: Leads" sheet — kept visually segregated so they can never drift the
+  // online ticket count.
+  const online = rows.filter(r => !r.is_manual && (r.count || 0) > 0);
+  const manual = rows.filter(r =>  r.is_manual && (r.count || 0) > 0);
 
-  let html = '';
-  for (const row of rows) {
+  const onlineCount   = online.reduce((s, r) => s + (r.count   || 0), 0);
+  const onlineRevenue = online.reduce((s, r) => s + (r.revenue || 0), 0);
+  const manualCount   = manual.reduce((s, r) => s + (r.count   || 0), 0);
+  const manualRevenue = manual.reduce((s, r) => s + (r.revenue || 0), 0);
+  const grandCount    = onlineCount   + manualCount;
+  const grandRevenue  = onlineRevenue + manualRevenue;
+
+  const tierRow = (row) => {
     const label = tierLabel(row.tier);
     const cls   = tierClass(row.tier);
-    const pct   = formatPct(row.revenue || 0, totalRevenue);
-
-    html += `
+    const pct   = formatPct(row.revenue || 0, grandRevenue);
+    return `
       <tr>
         <td><span class="tier-badge ${cls}">${escapeHtml(label)}</span></td>
         <td>${formatNumber(row.count)}</td>
         <td class="revenue-cell">${formatPeso(row.revenue)}</td>
         <td>${pct}</td>
+      </tr>
+    `;
+  };
+
+  const subtotalRow = (label, count, revenue) => `
+    <tr class="tier-subtotal">
+      <td><strong>${label}</strong></td>
+      <td><strong>${formatNumber(count)}</strong></td>
+      <td class="revenue-cell"><strong>${formatPeso(revenue)}</strong></td>
+      <td>${formatPct(revenue, grandRevenue)}</td>
+    </tr>
+  `;
+
+  const sectionHeaderRow = (label) => `
+    <tr class="tier-section">
+      <td colspan="4">${label}</td>
+    </tr>
+  `;
+
+  let html = '';
+
+  if (online.length) {
+    html += sectionHeaderRow('Online checkouts');
+    html += online.map(tierRow).join('');
+  }
+
+  if (manual.length) {
+    html += sectionHeaderRow('Manual / off-platform');
+    html += manual.map(tierRow).join('');
+    html += subtotalRow('Manual subtotal', manualCount, manualRevenue);
+  }
+
+  // Combined grand total only meaningful when manual sales exist
+  if (manual.length) {
+    html += `
+      <tr class="tier-grand-total">
+        <td><strong>All tickets</strong></td>
+        <td><strong>${formatNumber(grandCount)}</strong></td>
+        <td class="revenue-cell"><strong>${formatPeso(grandRevenue)}</strong></td>
+        <td><strong>100%</strong></td>
       </tr>
     `;
   }
