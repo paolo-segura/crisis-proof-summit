@@ -172,15 +172,19 @@ def handle_summary(h, supabase_url, service_key):
             f"{TABLE_VISITS}?select=id")
         total_clicks = supabase_count(supabase_url, service_key,
             f"{TABLE_CLICKS}?select=id")
-        # For sales we still need the amount sum, so fetch with pagination
+        # Fetch payment_provider so we can EXCLUDE manual sales from the
+        # headline number. Manual sales (warm leads, bulk discounts, partner
+        # tickets) live in the tier-breakdown section instead, so the Total
+        # Sales card reflects online checkout activity only.
         sales = supabase_get_paginated(supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=id,amount&payment_status=in.(PAID,FULLY_PAID)")
+            f"{TABLE_PURCHASES}?select=id,amount,payment_provider&payment_status=in.(PAID,FULLY_PAID)")
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
 
-    total_sales = len(sales)
-    total_revenue = sum(row.get("amount", 0) or 0 for row in sales)
+    online = [r for r in sales if (r.get("payment_provider") or "").lower() != "manual"]
+    total_sales = len(online)
+    total_revenue = sum(row.get("amount", 0) or 0 for row in online)
     conversion_rate = round((total_sales / total_visits) * 100, 2) if total_visits else 0
 
     _send_json(h, 200, {
@@ -262,7 +266,7 @@ def handle_by_tier(h, supabase_url, service_key):
     try:
         sales = supabase_get_paginated(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=ticket_tier,amount&payment_status=in.(PAID,FULLY_PAID)"
+            f"{TABLE_PURCHASES}?select=ticket_tier,amount,payment_provider&payment_status=in.(PAID,FULLY_PAID)"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
@@ -270,15 +274,18 @@ def handle_by_tier(h, supabase_url, service_key):
 
     tier_counts = defaultdict(int)
     tier_revenue = defaultdict(int)
+    tier_manual_count = defaultdict(int)  # how many of this tier's rows came from manual sync
 
     for row in sales:
         tier = row.get("ticket_tier") or "unknown"
         tier_counts[tier] += 1
         tier_revenue[tier] += row.get("amount", 0) or 0
+        if (row.get("payment_provider") or "").lower() == "manual":
+            tier_manual_count[tier] += 1
 
     total_sales = sum(tier_counts.values())
 
-    # Fixed display order, then any unexpected tiers appended
+    # Fixed display order for online tiers, then any unexpected tiers appended
     ordered_tiers = ["early_bird", "regular", "vip"]
     extra_tiers = [t for t in tier_counts if t not in ordered_tiers]
 
@@ -286,11 +293,16 @@ def handle_by_tier(h, supabase_url, service_key):
     for tier in ordered_tiers + extra_tiers:
         count = tier_counts.get(tier, 0)
         percentage = round((count / total_sales) * 100, 2) if total_sales else 0
+        # A tier is "manual" if every row in it came from the manual sync.
+        # Online ticket tiers (early_bird/regular/vip) will always be False.
+        # Mixed tiers can't happen today but the explicit comparison is defensive.
+        is_manual = count > 0 and tier_manual_count.get(tier, 0) == count
         result.append({
             "tier": tier,
             "count": count,
             "revenue": tier_revenue.get(tier, 0),
             "percentage": percentage,
+            "is_manual": is_manual,
         })
 
     _send_json(h, 200, result)
