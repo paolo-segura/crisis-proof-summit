@@ -182,6 +182,53 @@
       font-family: 'Space Grotesk', sans-serif;
     }
 
+    /* ─── DASHBOARD NAV (sticky) ──────────────────── */
+    /* Sticks to the top of the viewport once the dash-header scrolls past it.
+       Negative side margins let the bar span the full width inside #dashboard's
+       padding so the pills line up flush with the section content below. */
+    .dashboard-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px;
+      margin: -24px -24px 24px;
+      background: rgba(26, 47, 58, 0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--card-border);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .dashboard-nav a {
+      flex: 0 0 auto;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(232, 234, 240, 0.04);
+      border: 1px solid var(--card-border);
+      color: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .dashboard-nav a:hover {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+
+    /* Anchored sections need top-room equal to the nav height so they don't
+       land hidden under the sticky bar. */
+    .nav-target {
+      scroll-margin-top: 72px;
+    }
+
     .refresh-indicator.loading {
       color: var(--teal);
     }
@@ -693,6 +740,45 @@
 
     <div id="inline-error" class="inline-error"></div>
 
+    <!-- Quick-jump nav — sticks to the viewport so the operator can hop
+         between sections without scrolling back to the top each time.
+         Hash anchors target IDs added to each section below. -->
+    <nav class="dashboard-nav" aria-label="Dashboard sections">
+      <a href="#nav-tiers">Tier Breakdown</a>
+      <a href="#nav-recent-online">Recent Online</a>
+      <a href="#nav-recent-manual">Recent Manual</a>
+      <a href="#nav-participants">Participants</a>
+      <a href="#stat-conversion">Funnel &amp; UTM</a>
+      <a href="#webinar-section" id="nav-link-webinar" style="display:none;">Webinar</a>
+    </nav>
+
+    <!-- Ticket Tier Breakdown — top of the dashboard. First thing the
+         operator sees: total tickets sold across both online checkouts and
+         manual / off-platform sources, with subtotals + grand total. -->
+    <div id="nav-tiers" class="section-title nav-target">Ticket Tier Breakdown</div>
+    <div class="table-wrap">
+      <table id="tier-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Count</th>
+            <th>Revenue</th>
+            <th>% of Total</th>
+          </tr>
+        </thead>
+        <tbody id="tier-table-body">
+          <tr>
+            <td colspan="4">
+              <div class="empty-state" style="display:block">
+                <span class="empty-icon">🎫</span>
+                <p>No ticket data yet.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Sales & UTM Attribution -->
     <section id="sales-attribution" class="card">
       <header class="card-header">
@@ -725,7 +811,7 @@
 
       <!-- Recent payments — ONLINE checkouts only (manual / off-platform
            sales are in the section below so the two streams stay readable). -->
-      <div class="recent-payments">
+      <div id="nav-recent-online" class="recent-payments nav-target">
         <h3>Recent payments <span style="font-size:12px;color:var(--text-muted);font-weight:400">(website checkouts only)</span></h3>
         <div class="table-wrap">
           <table id="table-recent-payments">
@@ -748,7 +834,7 @@
 
       <!-- Recent Manual / Off-Platform Sales — synced from the BUS: Leads
            sheet via /api/sync-manual-sales. Trigger refresh with /buleadspush. -->
-      <div class="recent-payments recent-manual">
+      <div id="nav-recent-manual" class="recent-payments recent-manual nav-target">
         <h3>Recent manual / off-platform sales <span style="font-size:12px;color:var(--text-muted);font-weight:400">(warm leads, partner tickets, bulk discounts)</span></h3>
         <div class="table-wrap">
           <table id="table-recent-manual">
@@ -767,7 +853,7 @@
       </div>
 
       <!-- Recent Participant Details -->
-      <div class="recent-participants">
+      <div id="nav-participants" class="recent-participants nav-target">
         <div class="section-header-row">
           <h3>Recent Participant Details <span style="font-size:12px;color:var(--text-muted);font-weight:400">(latest 10 — full list via CSV)</span></h3>
           <button id="btn-download-participants" class="btn-csv" type="button">📊 Download CSV (all)</button>
@@ -829,33 +915,6 @@
         <div class="stat-label">Total Revenue</div>
         <div class="stat-value" id="stat-revenue">—</div>
       </div>
-    </div>
-
-    <!-- Ticket Tier Table — placed right after summary cards so the
-         tier-by-tier headcount (incl. manual / off-platform sales) is the
-         first detail anyone sees after the KPIs. -->
-    <div class="section-title">Ticket Tier Breakdown</div>
-    <div class="table-wrap">
-      <table id="tier-table">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th>Count</th>
-            <th>Revenue</th>
-            <th>% of Total</th>
-          </tr>
-        </thead>
-        <tbody id="tier-table-body">
-          <tr>
-            <td colspan="4">
-              <div class="empty-state" style="display:block">
-                <span class="empty-icon">🎫</span>
-                <p>No ticket data yet.</p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
 
     <!-- Conversion Funnel -->
