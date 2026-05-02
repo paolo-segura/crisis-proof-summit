@@ -693,6 +693,33 @@
 
     <div id="inline-error" class="inline-error"></div>
 
+    <!-- Ticket Tier Breakdown — top of the dashboard. First thing the
+         operator sees: total tickets sold across both online checkouts and
+         manual / off-platform sources, with subtotals + grand total. -->
+    <div class="section-title">Ticket Tier Breakdown</div>
+    <div class="table-wrap">
+      <table id="tier-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Count</th>
+            <th>Revenue</th>
+            <th>% of Total</th>
+          </tr>
+        </thead>
+        <tbody id="tier-table-body">
+          <tr>
+            <td colspan="4">
+              <div class="empty-state" style="display:block">
+                <span class="empty-icon">🎫</span>
+                <p>No ticket data yet.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Sales & UTM Attribution -->
     <section id="sales-attribution" class="card">
       <header class="card-header">
@@ -829,33 +856,6 @@
         <div class="stat-label">Total Revenue</div>
         <div class="stat-value" id="stat-revenue">—</div>
       </div>
-    </div>
-
-    <!-- Ticket Tier Table — placed right after summary cards so the
-         tier-by-tier headcount (incl. manual / off-platform sales) is the
-         first detail anyone sees after the KPIs. -->
-    <div class="section-title">Ticket Tier Breakdown</div>
-    <div class="table-wrap">
-      <table id="tier-table">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th>Count</th>
-            <th>Revenue</th>
-            <th>% of Total</th>
-          </tr>
-        </thead>
-        <tbody id="tier-table-body">
-          <tr>
-            <td colspan="4">
-              <div class="empty-state" style="display:block">
-                <span class="empty-icon">🎫</span>
-                <p>No ticket data yet.</p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
 
     <!-- Conversion Funnel -->
