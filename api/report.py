@@ -434,22 +434,50 @@ def handle_conversion_by_utm(h, supabase_url, service_key):
 
 
 def handle_recent_payments(h, supabase_url, service_key):
-    """GET /api/report?action=recent_payments — last 50 purchases (from sync)"""
+    """GET /api/report?action=recent_payments — last 50 ONLINE checkout payments.
+
+    Manual / off-platform tickets (warm leads, bulk discounts, partner ticket
+    batches synced from the 'BUS: Leads' sheet) are excluded so this table
+    only shows real website checkout activity. Manual sales have their own
+    `recent_manual_sales` action below.
+    """
     if not check_auth(h):
         return
     try:
-        # Filter out pre-sync abandoned-cart rows (no payment_status, no paid_at)
-        # so the dashboard only shows actual paid/refunded transactions.
         purchases = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status"
+            f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status,payment_provider"
             f"&payment_status=in.(PAID,FULLY_PAID)"
+            f"&or=(payment_provider.is.null,payment_provider.neq.manual)"
             f"&order=paid_at.desc&limit=50"
         )
     except urllib.error.URLError as exc:
         _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
         return
     _send_json(h, 200, purchases)
+
+
+def handle_recent_manual_sales(h, supabase_url, service_key):
+    """GET /api/report?action=recent_manual_sales — last 50 manual / off-platform tickets.
+
+    Synced from the client-maintained 'BUS: Leads' Google Sheet via
+    /api/sync-manual-sales. Distinct from website checkouts (which live in
+    `recent_payments`). Order by synced_at since manual rows have no paid_at.
+    """
+    if not check_auth(h):
+        return
+    try:
+        rows = supabase_get(
+            supabase_url, service_key,
+            f"{TABLE_PURCHASES}?select=order_id,synced_at,full_name,ticket_tier,amount,payment_status"
+            f"&payment_status=in.(PAID,FULLY_PAID)"
+            f"&payment_provider=eq.manual"
+            f"&order=synced_at.desc&limit=50"
+        )
+    except urllib.error.URLError as exc:
+        _send_json(h, 502, {"error": f"Supabase request failed: {exc}"})
+        return
+    _send_json(h, 200, rows)
 
 
 def handle_recent_participants(h, supabase_url, service_key):
@@ -560,6 +588,9 @@ class handler(BaseHTTPRequestHandler):
         elif action == "recent_payments":
             handle_recent_payments(self, supabase_url, service_key)
 
+        elif action == "recent_manual_sales":
+            handle_recent_manual_sales(self, supabase_url, service_key)
+
         elif action == "recent_participants":
             handle_recent_participants(self, supabase_url, service_key)
 
@@ -575,7 +606,7 @@ class handler(BaseHTTPRequestHandler):
                     f"Unknown action: '{action}'. Valid actions: "
                     "auth, summary, by_utm, by_tier, clicks_over_time, "
                     "revenue_by_utm, tickets_by_utm_tier, conversion_by_utm, "
-                    "recent_payments, recent_participants, all_participants, last_sync"
+                    "recent_payments, recent_manual_sales, recent_participants, all_participants, last_sync"
                 )
             })
 
