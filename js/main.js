@@ -56,13 +56,9 @@ function initCountdown() {
     const now = new Date();
 
     if (heroTimer) {
-      if (now < earlyBirdEnd) {
-        if (heroLabel) heroLabel.innerHTML = 'Early Bird &#8369;1,999 ends in';
-        renderTimer(heroTimer, earlyBirdEnd, 'EARLY BIRD ENDED');
-      } else {
-        if (heroLabel) heroLabel.textContent = 'Event starts in';
-        renderTimer(heroTimer, eventDate, 'EVENT DAY IS HERE!');
-      }
+      // Early bird ended May 2, 2026 — hero countdown now always targets the event date
+      if (heroLabel) heroLabel.textContent = 'Event starts in';
+      renderTimer(heroTimer, eventDate, 'EVENT DAY IS HERE!');
     }
 
     if (bottomTimer) {

@@ -35,7 +35,7 @@
   // except for VIP which is in-person-only. Sent to /api/create-invoice.
   function currentTier() {
     var r = form.querySelector('input[name="tier"]:checked');
-    var base = r ? r.value : 'early_bird';
+    var base = r ? r.value : 'regular';
     if (base === 'vip') return 'vip';
     if (currentAccessMode() === 'zoom' && (base === 'early_bird' || base === 'regular')) {
       return base + '_zoom';
@@ -90,13 +90,13 @@
     var vipTile = form.querySelector('[data-vip-tile]');
     var vipNote = form.querySelector('[data-vip-note]');
     var vipRadio = form.querySelector('input[name="tier"][value="vip"]');
-    var ebRadio = form.querySelector('input[name="tier"][value="early_bird"]');
+    var regularRadio = form.querySelector('input[name="tier"][value="regular"]');
     if (mode === 'zoom') {
       if (vipTile) vipTile.classList.add('disabled');
       if (vipNote) vipNote.hidden = false;
       if (vipRadio) vipRadio.disabled = true;
-      if (vipRadio && vipRadio.checked && ebRadio) {
-        ebRadio.checked = true;
+      if (vipRadio && vipRadio.checked && regularRadio) {
+        regularRadio.checked = true;
       }
     } else {
       if (vipTile) vipTile.classList.remove('disabled');
@@ -271,7 +271,7 @@
   // propagation so the iframe doesn't open.
   document.querySelectorAll('.ticket-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
-      var tier = btn.dataset.tier || 'early_bird';
+      var tier = btn.dataset.tier || 'regular';
       e.preventDefault();
       e.stopImmediatePropagation();
       var radio = form.querySelector('input[name="tier"][value="' + tier + '"]')
