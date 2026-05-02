@@ -958,6 +958,24 @@
 
           <div id="ic-error" class="ic-error" hidden></div>
 
+          <!-- Optional coupon code. Backend (api/create-invoice.py COUPONS dict)
+               is the source of truth — entering a valid code overrides tier
+               and price. Invalid codes return a 400 with an inline message. -->
+          <div class="ic-coupon-row">
+            <label class="ic-coupon-label" for="ic-coupon-input">Have a code?</label>
+            <input
+              type="text"
+              id="ic-coupon-input"
+              name="coupon_code"
+              class="ic-coupon-input"
+              placeholder="ENTER COUPON CODE HERE"
+              autocomplete="off"
+              autocapitalize="characters"
+              maxlength="40"
+            />
+            <span class="ic-coupon-status" id="ic-coupon-status" hidden></span>
+          </div>
+
           <!-- Order total + pay -->
           <div class="ic-order-total-row">
             <span class="ic-order-total-label">Order Total</span>

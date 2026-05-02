@@ -446,7 +446,7 @@ def handle_recent_payments(h, supabase_url, service_key):
     try:
         purchases = supabase_get(
             supabase_url, service_key,
-            f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status,payment_provider"
+            f"{TABLE_PURCHASES}?select=order_id,paid_at,full_name,email,ticket_tier,amount,utm_source,match_method,payment_status,payment_provider,coupon_code"
             f"&payment_status=in.(PAID,FULLY_PAID)"
             f"&or=(payment_provider.is.null,payment_provider.neq.manual)"
             f"&order=paid_at.desc&limit=50"

@@ -50,6 +50,35 @@ TIERS = {
 EVENT_NAME = "Business Unlocked Summit"
 INVOICE_DURATION_SECONDS = 60 * 60  # 1 hour before the Xendit invoice expires
 
+# Coupon codes — single source of truth, server-side only.
+#
+# Each coupon locks a specific tier and a flat new price (PHP). The buyer's
+# chosen access_mode (in_person / zoom) is preserved if it matches the coupon's
+# base tier (Early Bird and Regular have both modes; VIP is in-person only).
+#
+# Multi-use, no expiry, no usage cap. To add/remove codes, edit this dict and
+# redeploy. Codes are case-insensitive (we uppercase before lookup).
+#
+# Format: code -> { base_tier, amount, label }
+#   base_tier: which tier to lock the buyer into (early_bird | regular | vip)
+#   amount:    flat new per-ticket price in PHP
+#   label:     human-readable name shown in logs / admin (not on Xendit page)
+COUPONS = {
+    "KATHEB":  {"base_tier": "early_bird", "amount": 999,  "label": "Kath x BU - Early Bird"},
+    "KATH":    {"base_tier": "regular",    "amount": 1499, "label": "Kath x BU - Regular"},
+    "KATHVIP": {"base_tier": "vip",        "amount": 1999, "label": "Kath x BU - VIP"},
+}
+
+# Map a coupon's base_tier + the buyer's access_mode to the actual database
+# ticket_tier value. Mirrors the derivation in js/inline-checkout.js's
+# currentTier(). Returns None when the combo is invalid (e.g. VIP + Zoom).
+def _resolve_coupon_tier(base_tier, access_mode):
+    if base_tier == "vip":
+        return "vip" if access_mode == "in_person" else None
+    if base_tier in ("early_bird", "regular"):
+        return f"{base_tier}_zoom" if access_mode == "zoom" else base_tier
+    return None
+
 MIN_QUANTITY = 1
 MAX_QUANTITY = 10
 
@@ -298,8 +327,27 @@ def _parse_request(raw_body):
     preferred_method_raw = _str(data.get("preferred_method") or data.get("method"), 40).upper()
     preferred_method = preferred_method_raw if preferred_method_raw in ALLOWED_PAYMENT_METHODS else None
 
+    # Coupon code — optional. Uppercased + trimmed before lookup. Validation
+    # happens here so we can surface a clean 400 to the user without burning
+    # a Xendit invoice creation on a bad code.
+    coupon_code = _str(data.get("coupon_code"), 40).upper()
+    coupon_cfg = None
+    final_tier = tier
+    if coupon_code:
+        coupon_cfg = COUPONS.get(coupon_code)
+        if not coupon_cfg:
+            return None, "Invalid coupon code. Please check and try again."
+        # Derive access mode from the tier the user picked: tiers ending
+        # in _zoom = zoom, otherwise in-person.
+        access_mode = "zoom" if tier.endswith("_zoom") else "in_person"
+        resolved = _resolve_coupon_tier(coupon_cfg["base_tier"], access_mode)
+        if resolved is None:
+            # The only invalid combo today is VIP + Zoom (VIP is in-person-only).
+            return None, "This coupon is for in-person VIP only. Please switch to In-Person to use it."
+        final_tier = resolved
+
     return {
-        "tier": tier,
+        "tier": final_tier,
         "quantity": quantity,
         "full_name": full_name,
         "email": email,
@@ -307,14 +355,19 @@ def _parse_request(raw_body):
         "session_id": session_id,
         "utm": utm,
         "preferred_method": preferred_method,
+        "coupon_code": coupon_code or None,
+        "coupon_cfg": coupon_cfg,  # None when no coupon applied
     }, None
 
 
 def _create_invoice(parsed):
     tier = parsed["tier"]
     tier_cfg = TIERS[tier]
-    unit_price = tier_cfg["amount"]
     quantity = parsed["quantity"]
+    # Coupon, if any, replaces the per-ticket price. Tier was already locked
+    # in _parse_request (e.g. KATHVIP -> 'vip', KATHEB + zoom mode -> 'early_bird_zoom').
+    coupon_cfg = parsed.get("coupon_cfg")
+    unit_price = coupon_cfg["amount"] if coupon_cfg else tier_cfg["amount"]
     total_amount = unit_price * quantity
 
     order_id = _generate_order_id(tier)
@@ -327,13 +380,14 @@ def _create_invoice(parsed):
     first, last = _split_name(parsed["full_name"])
 
     qty_suffix = f" × {quantity}" if quantity > 1 else ""
+    coupon_suffix = f" — {coupon_cfg['label']}" if coupon_cfg else ""
     xendit_payload = {
         "external_id": order_id,
         # Xendit's `amount` must equal sum(items[].price * items[].quantity) —
         # Xendit displays items but does NOT recalculate amount from them.
         "amount": total_amount,
         "currency": "PHP",
-        "description": f"{EVENT_NAME} — {tier_cfg['label']} Ticket{qty_suffix} (May 9, 2026)",
+        "description": f"{EVENT_NAME} — {tier_cfg['label']} Ticket{qty_suffix} (May 9, 2026){coupon_suffix}",
         "payer_email": parsed["email"],
         "customer": {
             "given_names": first,
@@ -386,6 +440,7 @@ def _create_invoice(parsed):
         "xendit_invoice_id": invoice_id,
         "invoice_url":      invoice_url,
         "preferred_method": parsed["preferred_method"],
+        "coupon_code":      parsed.get("coupon_code"),
         "utm_source":       parsed["utm"].get("utm_source"),
         "utm_medium":       parsed["utm"].get("utm_medium"),
         "utm_campaign":     parsed["utm"].get("utm_campaign"),
@@ -394,6 +449,8 @@ def _create_invoice(parsed):
             "source": "create-invoice",
             "xendit_invoice_id": invoice_id,
             "xendit_status": invoice.get("status"),
+            "coupon_label": coupon_cfg["label"] if coupon_cfg else None,
+            "list_price":   tier_cfg["amount"],  # what they would have paid without the coupon
             "created_at": _iso_now(),
         },
     }

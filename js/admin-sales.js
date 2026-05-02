@@ -183,10 +183,13 @@
     if (!tbody) return;
     tbody.innerHTML = '';
     if (!rows || rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:24px;">No payments yet — waiting for the next sync.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:24px;">No payments yet — waiting for the next sync.</td></tr>';
       return;
     }
     rows.forEach(function (r) {
+      var couponCell = r.coupon_code
+        ? '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,0.12);color:#f59e0b;font-family:\'Space Grotesk\',monospace;font-size:11px;font-weight:600;letter-spacing:0.04em;">' + escapeHtml(r.coupon_code) + '</span>'
+        : '<span style="color:var(--text-muted)">—</span>';
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td>' + (r.paid_at ? new Date(r.paid_at).toLocaleString('en-PH') : '') + '</td>' +
@@ -194,6 +197,7 @@
         '<td>' + escapeHtml(r.email) + '</td>' +
         '<td>' + escapeHtml(tierLabel(r.ticket_tier)) + '</td>' +
         '<td>' + peso(r.amount) + '</td>' +
+        '<td>' + couponCell + '</td>' +
         '<td>' + escapeHtml(r.utm_source || 'direct') + '</td>' +
         '<td>' + escapeHtml(r.match_method) + '</td>' +
         '<td>' + escapeHtml(r.payment_status) + '</td>';

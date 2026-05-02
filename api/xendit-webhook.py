@@ -381,7 +381,7 @@ def _handle_event(body):
     }
     # Preserve fields the webhook doesn't re-send so we don't blank them on upsert
     for k in ("email", "mobile", "full_name", "ticket_tier", "session_id",
-              "invoice_url", "preferred_method",
+              "invoice_url", "preferred_method", "coupon_code",
               "utm_source", "utm_medium", "utm_campaign", "utm_content"):
         if existing.get(k) is not None:
             row[k] = existing[k]
