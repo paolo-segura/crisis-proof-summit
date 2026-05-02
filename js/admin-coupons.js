@@ -1,5 +1,7 @@
 /* /admin/coupons — manage the bu_coupons table.
-   Auth: same ADMIN_PASSWORD bearer as /admin (sessionStorage admin_pw).
+   Auth: COUPONS_PASSWORD bearer (separate from /admin's ADMIN_PASSWORD so this
+   page can be shared more widely without exposing the full sales dashboard).
+   Stored in sessionStorage as 'coupons_pw'.
    Endpoints: GET / POST / PATCH /api/coupons. Server is the source of truth;
    anything submitted here is re-validated server-side. */
 (function () {
@@ -111,7 +113,7 @@
     attemptLogin(pw).then(function (ok) {
       if (ok) {
         password = pw;
-        try { sessionStorage.setItem('admin_pw', pw); } catch (_) {}
+        try { sessionStorage.setItem('coupons_pw', pw); } catch (_) {}
         showDashboard();
       } else {
         loginError.style.display = 'block';
@@ -129,7 +131,7 @@
 
   // Auto-resume if /admin already logged in this session
   try {
-    var stashed = sessionStorage.getItem('admin_pw');
+    var stashed = sessionStorage.getItem('coupons_pw');
     if (stashed) {
       password = stashed;
       // Validate the stashed pw actually works before unhiding the dashboard

@@ -64,15 +64,17 @@ def _send_json(h, status, payload):
 
 
 def _check_admin_auth(h):
-    """ADMIN_PASSWORD Bearer — same scheme as /api/report. Returns True/False;
-    on False, the 401 response has already been sent."""
+    """COUPONS_PASSWORD Bearer — separate from /api/report's ADMIN_PASSWORD so
+    coupon access can be shared more widely (Coach Gina, Migs, etc.) without
+    handing out the full sales-dashboard password. Returns True/False; on False,
+    the 401 response has already been sent."""
     auth = h.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         _send_json(h, 401, {"error": "Missing or malformed Authorization header"})
         return False
-    expected = os.environ.get("ADMIN_PASSWORD")
+    expected = os.environ.get("COUPONS_PASSWORD")
     if not expected:
-        _send_json(h, 500, {"error": "Server missing ADMIN_PASSWORD"})
+        _send_json(h, 500, {"error": "Server missing COUPONS_PASSWORD"})
         return False
     # Constant-time compare so a remote attacker can't time the password.
     if not hmac.compare_digest(auth[len("Bearer "):], expected):
