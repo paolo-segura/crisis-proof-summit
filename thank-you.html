@@ -172,9 +172,9 @@
       function tierToUnitPrice(t) {
         var k = String(t || '').toLowerCase();
         if (k.indexOf('vip') !== -1) return 5000;
-        if (k.indexOf('early') !== -1) return 1999;
+        if (k.indexOf('early') !== -1) return 1999; // legacy: backfill historical early-bird purchases
         if (k.indexOf('regular') !== -1 || k.indexOf('standard') !== -1) return 2500;
-        return 1999; // safe default
+        return 2500; // safe default — current regular price
       }
       var value = valueParam ? parseFloat(valueParam) : (tierToUnitPrice(tier) * quantity);
 
