@@ -1252,7 +1252,7 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   padding: 1.1rem 2rem;
   font-size: 1.05rem;
   border-radius: 12px;
-  margin-top: 1rem;
+  margin: 1rem auto 0;
   background: linear-gradient(135deg, var(--amber), var(--amber-light));
   border-color: var(--amber);
   color: var(--charcoal);
