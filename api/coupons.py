@@ -17,6 +17,7 @@ Required env vars:
 """
 
 from http.server import BaseHTTPRequestHandler
+import hmac
 import json
 import os
 import re
@@ -73,7 +74,8 @@ def _check_admin_auth(h):
     if not expected:
         _send_json(h, 500, {"error": "Server missing ADMIN_PASSWORD"})
         return False
-    if auth[len("Bearer "):] != expected:
+    # Constant-time compare so a remote attacker can't time the password.
+    if not hmac.compare_digest(auth[len("Bearer "):], expected):
         _send_json(h, 401, {"error": "Invalid password"})
         return False
     return True
@@ -157,10 +159,19 @@ def _validate_create_payload(data):
     }, None
 
 
+_PATCH_ALLOWED_FIELDS = {"active", "amount", "label", "base_tier"}
+
+
 def _validate_patch_payload(data):
-    """Partial update — only the fields present are validated."""
+    """Partial update — only the fields present are validated. Strict: any
+    field outside _PATCH_ALLOWED_FIELDS rejects with a clear error so a typo
+    can't silently no-op (would be confusing for staff debugging "why didn't
+    my edit save?")."""
     if not isinstance(data, dict):
         return None, "Request body must be a JSON object."
+    unknown = set(data.keys()) - _PATCH_ALLOWED_FIELDS
+    if unknown:
+        return None, f"Unknown field(s): {sorted(unknown)}. Allowed: {sorted(_PATCH_ALLOWED_FIELDS)}."
     out = {}
 
     if "active" in data:

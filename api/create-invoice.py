@@ -73,11 +73,16 @@ COUPONS_FALLBACK = {
     "KATH":    {"base_tier": "regular",    "amount": 1999, "label": "Kath x BU"},
 }
 
-# Cache of the bu_coupons table for the duration of this serverless container's
-# life. Vercel cycles cold starts every few minutes so a stale cache is bounded;
-# admin-side coupon changes go live within ~5 minutes worst-case. Set to None
-# initially; populated on first successful DB read.
-_DB_COUPONS_CACHE = None
+# Cache of the bu_coupons table. TTL'd so a Supabase outage doesn't make
+# every checkout wait 8 seconds for the timeout — after the first failed
+# fetch we serve fallback for _DB_COUPONS_TTL seconds before retrying.
+# A cache hit (success path) lives the same 5 min before refreshing, so
+# admin-added codes go live within 5 minutes worst-case.
+import time as _time
+
+_DB_COUPONS_CACHE = None       # dict[str, dict] | None  (None = not yet populated)
+_DB_COUPONS_FETCHED_AT = 0.0   # epoch seconds — set on every fetch attempt, success OR failure
+_DB_COUPONS_TTL = 300          # 5 minutes
 
 
 def _fetch_coupons_from_db():
@@ -118,18 +123,38 @@ def _fetch_coupons_from_db():
 
 def _lookup_coupon(code):
     """Look up a coupon by code (case-insensitive). DB-first with hardcoded
-    fallback. Returns None if not found in either."""
-    global _DB_COUPONS_CACHE
+    fallback. Returns None if not found in either.
+
+    DB query is cached for _DB_COUPONS_TTL seconds. On a DB failure we still
+    set _DB_COUPONS_FETCHED_AT so subsequent requests serve fallback fast
+    instead of retrying an 8-second timeout per checkout under outage.
+
+    Disabling a code via the admin UI sets `active=false`; the fetch query
+    filters `active=eq.true` so disabled rows never enter the cache. The
+    hardcoded COUPONS_FALLBACK is a last-resort safety net only — to truly
+    kill a code that lives there (e.g. KATH), remove it from the dict in
+    code AND deactivate the DB row."""
+    global _DB_COUPONS_CACHE, _DB_COUPONS_FETCHED_AT
     norm = (code or "").upper().strip()
     if not norm:
         return None
-    if _DB_COUPONS_CACHE is None:
-        _DB_COUPONS_CACHE = _fetch_coupons_from_db()
+    now = _time.time()
+    # Refresh decision based on TTL alone — NOT on whether the cache is
+    # populated. If the first fetch failed (cache stays None), we must NOT
+    # retry on every request; we wait the full TTL. _DB_COUPONS_FETCHED_AT
+    # starts at 0.0, so the first call always falls through to a fetch.
+    if (now - _DB_COUPONS_FETCHED_AT) > _DB_COUPONS_TTL:
+        result = _fetch_coupons_from_db()
+        # Update the timestamp on every attempt — success OR failure — so a
+        # downed Supabase doesn't make every checkout wait 8s for the timeout.
+        _DB_COUPONS_FETCHED_AT = now
+        if result is not None:
+            _DB_COUPONS_CACHE = result
+        # If result is None and we already had a populated cache, keep it
+        # (better stale than wrong). If we had nothing, cache stays None
+        # and we fall through to COUPONS_FALLBACK below.
     if _DB_COUPONS_CACHE is not None and norm in _DB_COUPONS_CACHE:
         return _DB_COUPONS_CACHE[norm]
-    # Fall through to hardcoded — if DB returned a result that didn't include
-    # this code, we still let fallback save the day (e.g. someone deleted KATH
-    # from the DB by accident; checkout for KATH keeps working).
     return COUPONS_FALLBACK.get(norm)
 
 # Map a coupon's base_tier + the buyer's access_mode to the actual database

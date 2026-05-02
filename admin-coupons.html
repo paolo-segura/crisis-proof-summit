@@ -116,10 +116,14 @@
       text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;
     }
     .form-grid input, .form-grid select {
-      padding: 10px 12px; background: rgba(0,0,0,0.2);
+      padding: 10px 12px; background: rgba(232, 234, 240, 0.06);
       border: 1px solid var(--card-border); border-radius: var(--radius-sm);
       color: var(--text); font-family: inherit; font-size: 14px;
-      outline: none; transition: border-color 0.2s;
+      outline: none; transition: border-color 0.2s, background 0.15s;
+    }
+    .form-grid small {
+      font-size: 11px; color: var(--text-muted); font-weight: 400;
+      letter-spacing: 0; text-transform: none; margin-top: -2px;
     }
     .form-grid input:focus, .form-grid select:focus { border-color: var(--teal); }
     .form-grid input[name="code"] {
@@ -175,6 +179,35 @@
       text-align: center; padding: 32px 12px; color: var(--text-muted);
     }
     .table-wrap { overflow-x: auto; }
+
+    /* Briefly highlight a row after toggle so the user sees what changed. */
+    @keyframes flash-row {
+      0%   { background: rgba(13, 148, 136, 0.18); }
+      100% { background: transparent; }
+    }
+    tr.row-flash td { animation: flash-row 1.4s ease-out; }
+
+    /* Loading dot — same idiom as /admin's refresh indicator */
+    .loading-dot::before {
+      content: '';
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--teal);
+      margin-right: 8px; vertical-align: middle;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* Mobile: hide low-value columns to keep the table scannable */
+    @media (max-width: 640px) {
+      table th:nth-child(6), table td:nth-child(6),
+      table th:nth-child(7), table td:nth-child(7) {
+        display: none;
+      }
+      .dash-header { gap: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -210,7 +243,9 @@
         <div class="form-grid">
           <label>
             Code
-            <input type="text" name="code" placeholder="e.g. MIGS50" autocomplete="off" maxlength="40" required />
+            <input type="text" name="code" placeholder="e.g. MIGS50" autocomplete="off" maxlength="40" required
+                   oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
+            <small>Letters and digits only. We'll uppercase it as you type.</small>
           </label>
           <label>
             Tier
@@ -219,18 +254,22 @@
               <option value="early_bird">Early Bird (₱1,999 list)</option>
               <option value="vip">VIP (₱5,000 list, in-person only)</option>
             </select>
+            <small>Which ticket the buyer ends up with.</small>
           </label>
           <label>
-            New price (₱)
+            Final price buyer pays (₱)
             <input type="number" name="amount" placeholder="1999" min="100" max="50000" step="1" required />
+            <small>Not a discount % — the exact amount they'll be charged.</small>
           </label>
           <label>
             Label
             <input type="text" name="label" placeholder="e.g. Migs Discount" maxlength="120" required />
+            <small>Internal name. Shown on /admin Recent Payments.</small>
           </label>
           <label>
             Your name (optional)
             <input type="text" name="created_by" placeholder="e.g. Paolo" maxlength="80" autocomplete="name" />
+            <small>So we know who added it.</small>
           </label>
         </div>
         <div class="form-actions">
@@ -243,6 +282,7 @@
     <!-- LIST -->
     <div class="section">
       <h2>All coupons</h2>
+      <div id="list-msg" class="form-msg" style="margin-bottom:12px;display:none"></div>
       <div class="table-wrap">
         <table id="coupons-table">
           <thead>

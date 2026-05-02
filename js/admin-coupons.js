@@ -19,7 +19,14 @@
   var addForm       = document.getElementById('add-form');
   var addBtn        = document.getElementById('add-btn');
   var formMsg       = document.getElementById('form-msg');
+  var listMsg       = document.getElementById('list-msg');
   var couponsBody   = document.getElementById('coupons-body');
+
+  // After the most recent successful POST/PATCH, remember which code changed
+  // so we can briefly highlight the row when the list re-renders.
+  var lastChangedCode = null;
+  // Token so older success-message timeouts don't clear the next message
+  var formMsgClearToken = 0;
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
   function escapeHtml(s) {
@@ -41,9 +48,30 @@
     return ({ early_bird: 'Early Bird', regular: 'Regular', vip: 'VIP' })[t] || t;
   }
 
-  function setFormMsg(msg, kind) {
+  function setFormMsg(msg, kind, autoClearMs) {
     formMsg.textContent = msg || '';
     formMsg.className = 'form-msg' + (kind ? ' ' + kind : '');
+    formMsgClearToken++;
+    if (autoClearMs) {
+      var token = formMsgClearToken;
+      setTimeout(function () {
+        if (token === formMsgClearToken) {
+          formMsg.textContent = '';
+          formMsg.className = 'form-msg';
+        }
+      }, autoClearMs);
+    }
+  }
+
+  function setListMsg(msg, kind) {
+    if (!msg) {
+      listMsg.style.display = 'none';
+      listMsg.textContent = '';
+      return;
+    }
+    listMsg.textContent = msg;
+    listMsg.className = 'form-msg ' + (kind || 'err');
+    listMsg.style.display = 'block';
   }
 
   function authHeaders(extra) {
@@ -113,17 +141,24 @@
 
   // ─── List + render ─────────────────────────────────────────────────────────
   function renderList(rows) {
+    setListMsg('', '');
     if (!rows || rows.length === 0) {
       couponsBody.innerHTML = '<tr><td colspan="8" class="empty-state">No coupons yet. Add one above.</td></tr>';
       return;
     }
+    // Newest first — most useful default for "I just added a code, where is it?"
+    rows.sort(function (a, b) {
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
     var html = '';
     rows.forEach(function (r) {
       var statusPill = r.active
         ? '<span class="pill pill-active">ACTIVE</span>'
-        : '<span class="pill pill-inactive">OFF</span>';
+        : '<span class="pill pill-inactive">INACTIVE</span>';
       var toggleLabel = r.active ? 'Disable' : 'Enable';
-      html += '<tr>'
+      var ariaLabel   = (r.active ? 'Disable ' : 'Enable ') + r.code;
+      var rowClass    = (lastChangedCode === r.code) ? ' class="row-flash"' : '';
+      html += '<tr' + rowClass + '>'
         + '<td class="code-cell">' + escapeHtml(r.code) + '</td>'
         + '<td>' + escapeHtml(tierLabel(r.base_tier)) + '</td>'
         + '<td class="amount-cell">' + peso(r.amount) + '</td>'
@@ -131,11 +166,13 @@
         + '<td>' + statusPill + '</td>'
         + '<td>' + escapeHtml(formatDate(r.created_at)) + '</td>'
         + '<td>' + escapeHtml(r.created_by || '—') + '</td>'
-        + '<td><button class="row-toggle" data-code="' + escapeHtml(r.code) + '" data-active="' + (!r.active) + '">'
+        + '<td><button type="button" class="row-toggle" data-code="' + escapeHtml(r.code) + '" data-active="' + (!r.active) + '"'
+        + ' aria-label="' + escapeHtml(ariaLabel) + '">'
         + toggleLabel + '</button></td>'
         + '</tr>';
     });
     couponsBody.innerHTML = html;
+    lastChangedCode = null;  // reset so future renders don't keep flashing
     Array.prototype.forEach.call(
       couponsBody.querySelectorAll('.row-toggle'),
       function (btn) {
@@ -149,7 +186,7 @@
   }
 
   function loadList() {
-    couponsBody.innerHTML = '<tr><td colspan="8" class="empty-state">Loading…</td></tr>';
+    couponsBody.innerHTML = '<tr><td colspan="8" class="empty-state"><span class="loading-dot"></span>Loading coupons…</td></tr>';
     fetch(ENDPOINT, { headers: authHeaders() })
       .then(function (res) { return res.json().then(function (b) { return { ok: res.ok, body: b }; }); })
       .then(function (r) {
@@ -195,9 +232,13 @@
           setFormMsg((r.body && r.body.error) || 'Could not save (HTTP ' + r.status + ').', 'err');
           return;
         }
-        setFormMsg('✓ ' + payload.code + ' added.', 'ok');
+        setFormMsg('✓ ' + payload.code + ' added.', 'ok', 4000);
+        lastChangedCode = payload.code;
         addForm.reset();
         loadList();
+        // Focus the code field again so adding multiple codes in a row is fast.
+        var codeField = addForm.querySelector('input[name="code"]');
+        if (codeField) codeField.focus();
       })
       .catch(function () {
         setFormMsg('Network error. Try again.', 'err');
@@ -210,9 +251,19 @@
 
   // ─── Toggle active ─────────────────────────────────────────────────────────
   function toggleActive(code, nextActive, btn) {
+    // Confirm before flipping. Disabling a live code mid-launch is the
+    // regret case worth a one-click safety net. Enabling has lower stakes
+    // but symmetry is clearer than an asymmetric prompt.
+    var verb = nextActive ? 'Enable' : 'Disable';
+    var msg = nextActive
+      ? 'Enable ' + code + '? It will start working on checkout immediately (up to 5 min cache lag).'
+      : 'Disable ' + code + '? Buyers using this code will get an "Unknown code" error immediately (up to 5 min cache lag).';
+    if (!window.confirm(msg)) return;
+
     btn.disabled = true;
     var prev = btn.textContent;
     btn.textContent = '…';
+    setListMsg('', '');
     fetch(ENDPOINT + '?code=' + encodeURIComponent(code), {
       method: 'PATCH',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -223,15 +274,16 @@
         if (!r.ok) {
           btn.textContent = prev;
           btn.disabled = false;
-          alert((r.body && r.body.error) || 'Failed to update. Try again.');
+          setListMsg((r.body && r.body.error) || (verb + ' failed. Try again.'), 'err');
           return;
         }
+        lastChangedCode = code;
         loadList();
       })
       .catch(function () {
         btn.textContent = prev;
         btn.disabled = false;
-        alert('Network error. Try again.');
+        setListMsg('Network error. Refresh and try again.', 'err');
       });
   }
 })();
