@@ -63,13 +63,74 @@ INVOICE_DURATION_SECONDS = 60 * 60  # 1 hour before the Xendit invoice expires
 #   base_tier: which tier to lock the buyer into (early_bird | regular | vip)
 #   amount:    flat new per-ticket price in PHP
 #   label:     human-readable name shown in logs / admin (not on Xendit page)
-COUPONS = {
+#
+# Hardcoded HOT FALLBACK — always available even if Supabase is unreachable.
+# The live source of truth is the bu_coupons Supabase table (managed via the
+# /admin/coupons UI). _lookup_coupon below tries the table first, falls back
+# here on any error or empty result. KATH must always live here so the active
+# Kath promo can never break.
+COUPONS_FALLBACK = {
     "KATH":    {"base_tier": "regular",    "amount": 1999, "label": "Kath x BU"},
-    # KATHEB and KATHVIP turned off 2026-05-02 — Kath promo consolidated to a
-    # single tier @ ₱1,999. Re-enable by uncommenting if needed.
-    # "KATHEB":  {"base_tier": "early_bird", "amount": 999,  "label": "Kath x BU - Early Bird"},
-    # "KATHVIP": {"base_tier": "vip",        "amount": 1999, "label": "Kath x BU - VIP"},
 }
+
+# Cache of the bu_coupons table for the duration of this serverless container's
+# life. Vercel cycles cold starts every few minutes so a stale cache is bounded;
+# admin-side coupon changes go live within ~5 minutes worst-case. Set to None
+# initially; populated on first successful DB read.
+_DB_COUPONS_CACHE = None
+
+
+def _fetch_coupons_from_db():
+    """Read active coupons from bu_coupons. Returns dict keyed by uppercase code,
+    or None on any failure (caller falls back to COUPONS_FALLBACK)."""
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY")
+    if not url or not key:
+        return None
+    try:
+        req = urllib.request.Request(
+            f"{url.rstrip('/')}/rest/v1/bu_coupons"
+            f"?select=code,base_tier,amount,label&active=eq.true",
+            method="GET",
+        )
+        req.add_header("apikey", key)
+        req.add_header("Authorization", f"Bearer {key}")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            rows = json.loads(resp.read().decode("utf-8") or "[]")
+    except Exception as exc:  # noqa: BLE001 — never let a coupon-table outage break checkout
+        print(f"[create-invoice] coupon DB lookup failed, using fallback: {type(exc).__name__}: {exc}", flush=True)
+        return None
+    out = {}
+    for r in rows or []:
+        code = str(r.get("code", "")).upper().strip()
+        try:
+            amount = float(r.get("amount"))
+        except (TypeError, ValueError):
+            continue
+        base = str(r.get("base_tier", "")).lower()
+        label = str(r.get("label", "")).strip() or code
+        if not code or base not in ("early_bird", "regular", "vip") or amount <= 0:
+            continue
+        out[code] = {"base_tier": base, "amount": amount, "label": label}
+    return out
+
+
+def _lookup_coupon(code):
+    """Look up a coupon by code (case-insensitive). DB-first with hardcoded
+    fallback. Returns None if not found in either."""
+    global _DB_COUPONS_CACHE
+    norm = (code or "").upper().strip()
+    if not norm:
+        return None
+    if _DB_COUPONS_CACHE is None:
+        _DB_COUPONS_CACHE = _fetch_coupons_from_db()
+    if _DB_COUPONS_CACHE is not None and norm in _DB_COUPONS_CACHE:
+        return _DB_COUPONS_CACHE[norm]
+    # Fall through to hardcoded — if DB returned a result that didn't include
+    # this code, we still let fallback save the day (e.g. someone deleted KATH
+    # from the DB by accident; checkout for KATH keeps working).
+    return COUPONS_FALLBACK.get(norm)
 
 # Map a coupon's base_tier + the buyer's access_mode to the actual database
 # ticket_tier value. Mirrors the derivation in js/inline-checkout.js's
@@ -336,7 +397,7 @@ def _parse_request(raw_body):
     coupon_cfg = None
     final_tier = tier
     if coupon_code:
-        coupon_cfg = COUPONS.get(coupon_code)
+        coupon_cfg = _lookup_coupon(coupon_code)
         if not coupon_cfg:
             return None, "Invalid coupon code. Please check and try again."
         # Derive access mode from the tier the user picked: tiers ending

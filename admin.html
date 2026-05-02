@@ -223,6 +223,20 @@
       border-color: var(--teal);
     }
 
+    /* Cross-page link (lives on /admin, points away from it) — gold-accented
+       so it visually reads as separate-section instead of in-page anchor. */
+    .dashboard-nav a.dashboard-nav-link-external {
+      margin-left: auto;
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #f59e0b;
+    }
+    .dashboard-nav a.dashboard-nav-link-external:hover {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+
     /* Anchored sections need top-room equal to the nav height so they don't
        land hidden under the sticky bar. */
     .nav-target {
@@ -750,6 +764,7 @@
       <a href="#nav-participants">Participants</a>
       <a href="#stat-conversion">Funnel &amp; UTM</a>
       <a href="#webinar-section" id="nav-link-webinar" style="display:none;">Webinar</a>
+      <a href="/admin/coupons" class="dashboard-nav-link-external">Coupons &rarr;</a>
     </nav>
 
     <!-- Ticket Tier Breakdown — top of the dashboard. First thing the
