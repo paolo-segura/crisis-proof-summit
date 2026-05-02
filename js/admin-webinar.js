@@ -143,6 +143,9 @@
     renderTable(data.rows || []);
     const section = document.getElementById('webinar-section');
     if (section) section.style.display = 'block';
+    // Reveal the matching nav link now that there's something to jump to.
+    const navLink = document.getElementById('nav-link-webinar');
+    if (navLink) navLink.style.display = '';
   }
 
   // ─── CSV export ───────────────────────────────────────────────────────
