@@ -63,13 +63,99 @@ INVOICE_DURATION_SECONDS = 60 * 60  # 1 hour before the Xendit invoice expires
 #   base_tier: which tier to lock the buyer into (early_bird | regular | vip)
 #   amount:    flat new per-ticket price in PHP
 #   label:     human-readable name shown in logs / admin (not on Xendit page)
-COUPONS = {
+#
+# Hardcoded HOT FALLBACK — always available even if Supabase is unreachable.
+# The live source of truth is the bu_coupons Supabase table (managed via the
+# /admin/coupons UI). _lookup_coupon below tries the table first, falls back
+# here on any error or empty result. KATH must always live here so the active
+# Kath promo can never break.
+COUPONS_FALLBACK = {
     "KATH":    {"base_tier": "regular",    "amount": 1999, "label": "Kath x BU"},
-    # KATHEB and KATHVIP turned off 2026-05-02 — Kath promo consolidated to a
-    # single tier @ ₱1,999. Re-enable by uncommenting if needed.
-    # "KATHEB":  {"base_tier": "early_bird", "amount": 999,  "label": "Kath x BU - Early Bird"},
-    # "KATHVIP": {"base_tier": "vip",        "amount": 1999, "label": "Kath x BU - VIP"},
 }
+
+# Cache of the bu_coupons table. TTL'd so a Supabase outage doesn't make
+# every checkout wait 8 seconds for the timeout — after the first failed
+# fetch we serve fallback for _DB_COUPONS_TTL seconds before retrying.
+# A cache hit (success path) lives the same 5 min before refreshing, so
+# admin-added codes go live within 5 minutes worst-case.
+import time as _time
+
+_DB_COUPONS_CACHE = None       # dict[str, dict] | None  (None = not yet populated)
+_DB_COUPONS_FETCHED_AT = 0.0   # epoch seconds — set on every fetch attempt, success OR failure
+_DB_COUPONS_TTL = 300          # 5 minutes
+
+
+def _fetch_coupons_from_db():
+    """Read active coupons from bu_coupons. Returns dict keyed by uppercase code,
+    or None on any failure (caller falls back to COUPONS_FALLBACK)."""
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY")
+    if not url or not key:
+        return None
+    try:
+        req = urllib.request.Request(
+            f"{url.rstrip('/')}/rest/v1/bu_coupons"
+            f"?select=code,base_tier,amount,label&active=eq.true",
+            method="GET",
+        )
+        req.add_header("apikey", key)
+        req.add_header("Authorization", f"Bearer {key}")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            rows = json.loads(resp.read().decode("utf-8") or "[]")
+    except Exception as exc:  # noqa: BLE001 — never let a coupon-table outage break checkout
+        print(f"[create-invoice] coupon DB lookup failed, using fallback: {type(exc).__name__}: {exc}", flush=True)
+        return None
+    out = {}
+    for r in rows or []:
+        code = str(r.get("code", "")).upper().strip()
+        try:
+            amount = float(r.get("amount"))
+        except (TypeError, ValueError):
+            continue
+        base = str(r.get("base_tier", "")).lower()
+        label = str(r.get("label", "")).strip() or code
+        if not code or base not in ("early_bird", "regular", "vip") or amount <= 0:
+            continue
+        out[code] = {"base_tier": base, "amount": amount, "label": label}
+    return out
+
+
+def _lookup_coupon(code):
+    """Look up a coupon by code (case-insensitive). DB-first with hardcoded
+    fallback. Returns None if not found in either.
+
+    DB query is cached for _DB_COUPONS_TTL seconds. On a DB failure we still
+    set _DB_COUPONS_FETCHED_AT so subsequent requests serve fallback fast
+    instead of retrying an 8-second timeout per checkout under outage.
+
+    Disabling a code via the admin UI sets `active=false`; the fetch query
+    filters `active=eq.true` so disabled rows never enter the cache. The
+    hardcoded COUPONS_FALLBACK is a last-resort safety net only — to truly
+    kill a code that lives there (e.g. KATH), remove it from the dict in
+    code AND deactivate the DB row."""
+    global _DB_COUPONS_CACHE, _DB_COUPONS_FETCHED_AT
+    norm = (code or "").upper().strip()
+    if not norm:
+        return None
+    now = _time.time()
+    # Refresh decision based on TTL alone — NOT on whether the cache is
+    # populated. If the first fetch failed (cache stays None), we must NOT
+    # retry on every request; we wait the full TTL. _DB_COUPONS_FETCHED_AT
+    # starts at 0.0, so the first call always falls through to a fetch.
+    if (now - _DB_COUPONS_FETCHED_AT) > _DB_COUPONS_TTL:
+        result = _fetch_coupons_from_db()
+        # Update the timestamp on every attempt — success OR failure — so a
+        # downed Supabase doesn't make every checkout wait 8s for the timeout.
+        _DB_COUPONS_FETCHED_AT = now
+        if result is not None:
+            _DB_COUPONS_CACHE = result
+        # If result is None and we already had a populated cache, keep it
+        # (better stale than wrong). If we had nothing, cache stays None
+        # and we fall through to COUPONS_FALLBACK below.
+    if _DB_COUPONS_CACHE is not None and norm in _DB_COUPONS_CACHE:
+        return _DB_COUPONS_CACHE[norm]
+    return COUPONS_FALLBACK.get(norm)
 
 # Map a coupon's base_tier + the buyer's access_mode to the actual database
 # ticket_tier value. Mirrors the derivation in js/inline-checkout.js's
@@ -336,7 +422,7 @@ def _parse_request(raw_body):
     coupon_cfg = None
     final_tier = tier
     if coupon_code:
-        coupon_cfg = COUPONS.get(coupon_code)
+        coupon_cfg = _lookup_coupon(coupon_code)
         if not coupon_cfg:
             return None, "Invalid coupon code. Please check and try again."
         # Derive access mode from the tier the user picked: tiers ending

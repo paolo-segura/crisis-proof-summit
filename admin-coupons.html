@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coupon Codes — Business Unlocked Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;700&family=Oswald:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #FAFAF9;
+      --card: #1a2f3a;
+      --card-border: #233c48;
+      --teal: #0D9488;
+      --teal-dim: rgba(13, 148, 136, 0.15);
+      --text: #e8eaf0;
+      --text-muted: #6b7a99;
+      --text-dim: #9aa3b8;
+      --error: #e55a5a;
+      --success: #4caf82;
+      --amber: #f59e0b;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* Login (same shape as /admin) */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 48px 40px;
+      width: 100%; max-width: 400px; text-align: center;
+    }
+    .login-logo {
+      font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--teal); margin-bottom: 8px;
+    }
+    .login-card h1 {
+      font-family: 'Oswald', sans-serif; font-size: 28px;
+      color: var(--text); margin-bottom: 32px;
+    }
+    .login-card label {
+      display: block; text-align: left; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+    .login-card input[type="password"] {
+      width: 100%; padding: 12px 16px; background: var(--bg);
+      border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+      color: var(--text); font-size: 15px; outline: none;
+      transition: border-color 0.2s; margin-bottom: 16px;
+    }
+    .login-card input[type="password"]:focus { border-color: var(--teal); }
+    .login-card button {
+      width: 100%; padding: 13px; background: var(--teal); border: none;
+      border-radius: var(--radius-sm); color: var(--bg);
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .login-card button:hover { opacity: 0.9; }
+    .login-card button:active { transform: scale(0.98); }
+    #login-error {
+      display: none; margin-top: 14px; color: var(--error); font-size: 13px;
+    }
+
+    /* Dashboard frame */
+    #dashboard {
+      display: none; padding: 24px; max-width: 1100px; margin: 0 auto;
+    }
+    .dash-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
+    }
+    .dash-header-left h1 {
+      font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 700;
+      color: var(--teal); line-height: 1.2;
+    }
+    .dash-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .back-link {
+      font-size: 13px; color: var(--text-dim); text-decoration: none;
+      padding: 8px 16px; border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm); transition: border-color 0.2s, color 0.2s;
+    }
+    .back-link:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* Section card */
+    .section {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+    }
+    .section h2 {
+      font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    /* Form */
+    .form-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+    .form-grid label {
+      display: flex; flex-direction: column; gap: 6px;
+      font-size: 12px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;
+    }
+    .form-grid input, .form-grid select {
+      padding: 10px 12px; background: rgba(232, 234, 240, 0.06);
+      border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: inherit; font-size: 14px;
+      outline: none; transition: border-color 0.2s, background 0.15s;
+    }
+    .form-grid small {
+      font-size: 11px; color: var(--text-muted); font-weight: 400;
+      letter-spacing: 0; text-transform: none; margin-top: -2px;
+    }
+    .form-grid input:focus, .form-grid select:focus { border-color: var(--teal); }
+    .form-grid input[name="code"] {
+      font-family: 'Space Grotesk', monospace;
+      text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+    }
+    .form-actions {
+      margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: var(--radius-sm); border: none;
+      font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn-primary { background: var(--teal); color: var(--bg); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .form-msg { font-size: 13px; }
+    .form-msg.ok  { color: var(--success); }
+    .form-msg.err { color: var(--error); }
+
+    /* Table */
+    table {
+      width: 100%; border-collapse: collapse; font-size: 14px;
+    }
+    th, td {
+      padding: 11px 12px; text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-muted); font-weight: 600;
+    }
+    td.code-cell {
+      font-family: 'Space Grotesk', monospace; font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    td.amount-cell { color: var(--teal); font-weight: 600; }
+    .pill {
+      display: inline-block; padding: 2px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .pill-active   { background: rgba(76, 175, 130, 0.15); color: var(--success); }
+    .pill-inactive { background: rgba(232, 234, 240, 0.08); color: var(--text-muted); }
+    .row-toggle {
+      padding: 5px 12px; border-radius: 999px; border: 1px solid var(--card-border);
+      background: transparent; color: var(--text-dim); font-size: 12px;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .row-toggle:hover { border-color: var(--teal); color: var(--teal); }
+
+    .empty-state {
+      text-align: center; padding: 32px 12px; color: var(--text-muted);
+    }
+    .table-wrap { overflow-x: auto; }
+
+    /* Briefly highlight a row after toggle so the user sees what changed. */
+    @keyframes flash-row {
+      0%   { background: rgba(13, 148, 136, 0.18); }
+      100% { background: transparent; }
+    }
+    tr.row-flash td { animation: flash-row 1.4s ease-out; }
+
+    /* Loading dot — same idiom as /admin's refresh indicator */
+    .loading-dot::before {
+      content: '';
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--teal);
+      margin-right: 8px; vertical-align: middle;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* Mobile: hide low-value columns to keep the table scannable */
+    @media (max-width: 640px) {
+      table th:nth-child(6), table td:nth-child(6),
+      table th:nth-child(7), table td:nth-child(7) {
+        display: none;
+      }
+      .dash-header { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">Business Unlocked Summit</div>
+      <h1>Coupon Codes</h1>
+      <label for="password-input">Password</label>
+      <input type="password" id="password-input" placeholder="Enter admin password" autocomplete="current-password" />
+      <button id="login-btn">Log In</button>
+      <span id="login-error">Incorrect password. Please try again.</span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Coupon Codes</h1>
+        <div class="dash-subtitle">Add, list, and toggle promo codes for the inline checkout.</div>
+      </div>
+      <div>
+        <a href="/admin" class="back-link">← Back to Dashboard</a>
+      </div>
+    </div>
+
+    <!-- ADD COUPON FORM -->
+    <div class="section">
+      <h2>Add a coupon</h2>
+      <form id="add-form" novalidate>
+        <div class="form-grid">
+          <label>
+            Code
+            <input type="text" name="code" placeholder="e.g. MIGS50" autocomplete="off" maxlength="40" required
+                   oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
+            <small>Letters and digits only. We'll uppercase it as you type.</small>
+          </label>
+          <label>
+            Tier
+            <select name="base_tier" required>
+              <option value="regular">Regular (₱2,500 list)</option>
+              <option value="early_bird">Early Bird (₱1,999 list)</option>
+              <option value="vip">VIP (₱5,000 list, in-person only)</option>
+            </select>
+            <small>Which ticket the buyer ends up with.</small>
+          </label>
+          <label>
+            Final price buyer pays (₱)
+            <input type="number" name="amount" placeholder="1999" min="100" max="50000" step="1" required />
+            <small>Not a discount % — the exact amount they'll be charged.</small>
+          </label>
+          <label>
+            Label
+            <input type="text" name="label" placeholder="e.g. Migs Discount" maxlength="120" required />
+            <small>Internal name. Shown on /admin Recent Payments.</small>
+          </label>
+          <label>
+            Your name (optional)
+            <input type="text" name="created_by" placeholder="e.g. Paolo" maxlength="80" autocomplete="name" />
+            <small>So we know who added it.</small>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="add-btn">Add Coupon</button>
+          <span class="form-msg" id="form-msg"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- LIST -->
+    <div class="section">
+      <h2>All coupons</h2>
+      <div id="list-msg" class="form-msg" style="margin-bottom:12px;display:none"></div>
+      <div class="table-wrap">
+        <table id="coupons-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Tier</th>
+              <th>Price</th>
+              <th>Label</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>By</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="coupons-body">
+            <tr>
+              <td colspan="8" class="empty-state">Loading…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin-coupons.js"></script>
+</body>
+</html>

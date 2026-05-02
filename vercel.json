@@ -10,6 +10,7 @@
     { "source": "/thank-you", "destination": "/thank-you.html" },
     { "source": "/dashboard", "destination": "/admin.html" },
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/coupons", "destination": "/admin-coupons.html" },
     { "source": "/participant-details", "destination": "/participant-details.html" },
     { "source": "/free", "destination": "/free.html" },
     { "source": "/free/thank-you", "destination": "/free-thank-you.html" },
