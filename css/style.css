@@ -3491,6 +3491,18 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
   .speaker-brand-logo { height: 56px; }
 }
 
+/* Modifier — LCM mark is squarer with more interior whitespace than the
+   horizontal logos it sits next to (e.g. SM Supermalls), so at parity height
+   it reads visually smaller. Bumping ~25% restores optical balance in the
+   .speaker-brands row without making it dominate. */
+.speaker-brand-logo--lg { height: 76px; max-width: 340px; }
+@media (min-width: 768px) {
+  .speaker-brand-logo--lg { height: 92px; max-width: 420px; }
+}
+@media (max-width: 767px) {
+  .speaker-brand-logo--lg { height: 70px; }
+}
+
 /* ==============================
    HERO REORDER (Apr 28 2026 — Jay Jazmines edits)
    Poster moves inline between tagline and CTA.
