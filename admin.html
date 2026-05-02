@@ -723,9 +723,10 @@
         </div>
       </div>
 
-      <!-- Recent payments -->
+      <!-- Recent payments — ONLINE checkouts only (manual / off-platform
+           sales are in the section below so the two streams stay readable). -->
       <div class="recent-payments">
-        <h3>Recent payments</h3>
+        <h3>Recent payments <span style="font-size:12px;color:var(--text-muted);font-weight:400">(website checkouts only)</span></h3>
         <div class="table-wrap">
           <table id="table-recent-payments">
             <thead>
@@ -737,6 +738,26 @@
                 <th>Amount</th>
                 <th>UTM source</th>
                 <th>Match</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody><!-- rows inserted by admin-sales.js --></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Manual / Off-Platform Sales — synced from the BUS: Leads
+           sheet via /api/sync-manual-sales. Trigger refresh with /buleadspush. -->
+      <div class="recent-payments recent-manual">
+        <h3>Recent manual / off-platform sales <span style="font-size:12px;color:var(--text-muted);font-weight:400">(warm leads, partner tickets, bulk discounts)</span></h3>
+        <div class="table-wrap">
+          <table id="table-recent-manual">
+            <thead>
+              <tr>
+                <th>Synced at</th>
+                <th>Source</th>
+                <th>Attendee</th>
+                <th>Amount</th>
                 <th>Status</th>
               </tr>
             </thead>

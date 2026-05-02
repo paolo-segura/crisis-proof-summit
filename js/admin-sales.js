@@ -201,6 +201,35 @@
     });
   }
 
+  async function loadManualSales() {
+    try {
+      return await window.apiFetch('recent_manual_sales') || [];
+    } catch (err) {
+      console.error('[admin-sales] manual sales fetch failed', err);
+      return [];
+    }
+  }
+
+  function renderManualTable(rows) {
+    var tbody = document.querySelector('#table-recent-manual tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:24px;">No manual sales yet — run <code>/buleadspush</code> after the client updates the BUS: Leads sheet.</td></tr>';
+      return;
+    }
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + (r.synced_at ? new Date(r.synced_at).toLocaleString('en-PH') : '') + '</td>' +
+        '<td>' + escapeHtml(tierLabel(r.ticket_tier)) + '</td>' +
+        '<td>' + escapeHtml(r.full_name) + '</td>' +
+        '<td>' + peso(r.amount) + '</td>' +
+        '<td>' + escapeHtml(r.payment_status) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
   async function loadParticipants() {
     try {
       return await window.apiFetch('recent_participants') || [];
@@ -288,6 +317,8 @@
       await loadSyncStatus();
       var recent = await loadKPIs();
       renderPaymentsTable(recent);
+      var manualSales = await loadManualSales();
+      renderManualTable(manualSales);
       var participants = await loadParticipants();
       renderParticipantsTable(participants);
       await drawRevenueChart();
