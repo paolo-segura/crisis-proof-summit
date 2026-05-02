@@ -24,9 +24,9 @@
   // round-trips a 400 with a clear message. Adding/removing a code here is
   // visual-only — the server change is what actually unlocks the discount.
   var COUPONS = {
-    KATHEB:  { base: 'early_bird', amount: 999,  label: 'Kath x BU - Early Bird' },
-    KATH:    { base: 'regular',    amount: 1499, label: 'Kath x BU - Regular' },
-    KATHVIP: { base: 'vip',        amount: 1999, label: 'Kath x BU - VIP' }
+    KATH:    { base: 'regular',    amount: 1999, label: 'Kath x BU' }
+    // KATHEB and KATHVIP turned off 2026-05-02. Server is the source of truth;
+    // anyone typing those will see "Unknown code" client-side and 400 server-side.
   };
   var CATEGORY_LABELS = { ewallet: 'e-wallet', card: 'card', qr: 'QR Ph' };
   var EMAIL_PATTERN = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;

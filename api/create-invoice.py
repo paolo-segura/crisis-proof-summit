@@ -64,9 +64,11 @@ INVOICE_DURATION_SECONDS = 60 * 60  # 1 hour before the Xendit invoice expires
 #   amount:    flat new per-ticket price in PHP
 #   label:     human-readable name shown in logs / admin (not on Xendit page)
 COUPONS = {
-    "KATHEB":  {"base_tier": "early_bird", "amount": 999,  "label": "Kath x BU - Early Bird"},
-    "KATH":    {"base_tier": "regular",    "amount": 1499, "label": "Kath x BU - Regular"},
-    "KATHVIP": {"base_tier": "vip",        "amount": 1999, "label": "Kath x BU - VIP"},
+    "KATH":    {"base_tier": "regular",    "amount": 1999, "label": "Kath x BU"},
+    # KATHEB and KATHVIP turned off 2026-05-02 — Kath promo consolidated to a
+    # single tier @ ₱1,999. Re-enable by uncommenting if needed.
+    # "KATHEB":  {"base_tier": "early_bird", "amount": 999,  "label": "Kath x BU - Early Bird"},
+    # "KATHVIP": {"base_tier": "vip",        "amount": 1999, "label": "Kath x BU - VIP"},
 }
 
 # Map a coupon's base_tier + the buyer's access_mode to the actual database
