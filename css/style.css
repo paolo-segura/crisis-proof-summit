@@ -1247,12 +1247,15 @@ footer { padding: 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); pos
 }
 /* Hero Countdown + CTA — timer first, then CTA below, amber glow */
 .hero-cta-btn {
+  display: block;
   width: 100%;
   max-width: 500px;
   padding: 1.1rem 2rem;
   font-size: 1.05rem;
   border-radius: 12px;
   margin: 1rem auto 0;
+  align-self: center; /* belt-and-suspenders for flex parent (.hero-content on mobile) */
+  text-align: center;
   background: linear-gradient(135deg, var(--amber), var(--amber-light));
   border-color: var(--amber);
   color: var(--charcoal);
