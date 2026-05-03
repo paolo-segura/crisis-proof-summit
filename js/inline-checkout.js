@@ -18,16 +18,18 @@
     early_bird_zoom: 1999, regular_zoom: 2500
   };
 
-  // Mirror of api/create-invoice.py COUPONS — keep in sync. Used ONLY for the
-  // optimistic UI preview (shows the discounted total before submit). Server is
-  // still the authoritative validator; an unrecognized code or a tier mismatch
-  // round-trips a 400 with a clear message. Adding/removing a code here is
-  // visual-only — the server change is what actually unlocks the discount.
-  var COUPONS = {
-    KATH:    { base: 'regular',    amount: 1999, label: 'Kath x BU' }
-    // KATHEB and KATHVIP turned off 2026-05-02. Server is the source of truth;
-    // anyone typing those will see "Unknown code" client-side and 400 server-side.
-  };
+  // Coupons are now DB-managed via /admin/coupons. This page validates each
+  // typed code against /api/coupon-check (public, GET, debounced) so any code
+  // an admin adds becomes usable immediately — no redeploy. Negative results
+  // are cached too so re-typing the same bad code doesn't refetch.
+  var COUPON_CHECK_ENDPOINT = '/api/coupon-check';
+  var _couponCache = {};            // upper-cased code -> cfg | null
+  var _couponLookupTimer = null;
+  var _couponLookupSeq   = 0;       // race token — discard stale responses
+  // Current coupon state, updated by lookupCoupon. Read by updateTotal +
+  // submit handler. Statuses: 'empty' | 'checking' | 'ok' | 'wrong_mode'
+  // | 'unknown' | 'error'.
+  var _couponState = { code: '', cfg: null, finalTier: null, valid: false, status: 'empty' };
   var CATEGORY_LABELS = { ewallet: 'e-wallet', card: 'card', qr: 'QR Ph' };
   var EMAIL_PATTERN = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
   var TABLE_CLICKS = 'new_business_normal_clicks';  // same table main.js uses
@@ -72,24 +74,74 @@
     };
   }
 
-  // Read + normalize the coupon input. Returns { code, cfg, finalTier } or
-  // { code: '', ... } when nothing's entered. cfg is null on unknown codes.
-  function currentCoupon() {
-    var input = $('ic-coupon-input');
-    var raw = input ? (input.value || '').trim().toUpperCase() : '';
-    if (!raw) return { code: '', cfg: null, finalTier: null, valid: false };
-    var cfg = COUPONS[raw] || null;
-    if (!cfg) return { code: raw, cfg: null, finalTier: null, valid: false };
-    // Mirror server-side _resolve_coupon_tier: VIP locks to in-person,
-    // EB/Reg follow the access_mode the buyer picked.
+  // Build state from a (code, cfg) pair using the buyer's current access_mode.
+  // Mirrors server-side _resolve_coupon_tier: VIP locks to in-person, EB/Reg
+  // follow the access_mode toggle. Pure function; no I/O.
+  function applyCouponToState(code, cfg) {
+    if (!code) return { code: '', cfg: null, finalTier: null, valid: false, status: 'empty' };
+    if (!cfg)  return { code: code, cfg: null, finalTier: null, valid: false, status: 'unknown' };
     var mode = currentAccessMode();
+    var base = cfg.base_tier;
     var finalTier;
-    if (cfg.base === 'vip') {
+    if (base === 'vip') {
       finalTier = mode === 'in_person' ? 'vip' : null;
     } else {
-      finalTier = mode === 'zoom' ? cfg.base + '_zoom' : cfg.base;
+      finalTier = mode === 'zoom' ? base + '_zoom' : base;
     }
-    return { code: raw, cfg: cfg, finalTier: finalTier, valid: !!finalTier };
+    return {
+      code: code,
+      cfg: cfg,
+      finalTier: finalTier,
+      valid: !!finalTier,
+      status: finalTier ? 'ok' : 'wrong_mode'
+    };
+  }
+
+  function currentCoupon() { return _couponState; }
+
+  function lookupCoupon(rawInput) {
+    var code = (rawInput || '').trim().toUpperCase();
+    if (!code) {
+      _couponState = applyCouponToState('', null);
+      updateTotal();
+      return;
+    }
+    // Cache hit — instant
+    if (Object.prototype.hasOwnProperty.call(_couponCache, code)) {
+      _couponState = applyCouponToState(code, _couponCache[code]);
+      updateTotal();
+      return;
+    }
+    // Show "Checking…" while the request is in flight
+    _couponState = { code: code, cfg: null, finalTier: null, valid: false, status: 'checking' };
+    updateTotal();
+
+    var seq = ++_couponLookupSeq;
+    fetch(COUPON_CHECK_ENDPOINT + '?code=' + encodeURIComponent(code), { method: 'GET' })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (body) {
+        if (seq !== _couponLookupSeq) return;  // stale, user kept typing
+        var cfg = (body && body.valid) ? {
+          base_tier: body.base_tier,
+          amount: body.amount,
+          label: body.label
+        } : null;
+        _couponCache[code] = cfg;  // cache positive AND negative
+        _couponState = applyCouponToState(code, cfg);
+        updateTotal();
+      })
+      .catch(function () {
+        if (seq !== _couponLookupSeq) return;
+        _couponState = { code: code, cfg: null, finalTier: null, valid: false, status: 'error' };
+        updateTotal();
+      });
+  }
+
+  function scheduleCouponLookup() {
+    var input = $('ic-coupon-input');
+    var raw = input ? input.value : '';
+    clearTimeout(_couponLookupTimer);
+    _couponLookupTimer = setTimeout(function () { lookupCoupon(raw); }, 300);
   }
 
   function updateTotal() {
@@ -108,21 +160,29 @@
     if (qv) qv.textContent = qty;
     if (qi) qi.value = String(qty);
 
-    // Coupon status pill — shown only when something's typed
+    // Coupon status pill — driven by _couponState.status
     var status = $('ic-coupon-status');
     if (status) {
-      if (!coupon.code) {
+      var s = coupon.status || 'empty';
+      if (s === 'empty') {
         status.hidden = true;
         status.textContent = '';
         status.className = 'ic-coupon-status';
-      } else if (coupon.valid) {
+      } else if (s === 'checking') {
+        status.hidden = false;
+        status.textContent = 'Checking code…';
+        status.className = 'ic-coupon-status';
+      } else if (s === 'ok') {
         status.hidden = false;
         status.textContent = '✓ ' + coupon.cfg.label + ' applied';
         status.className = 'ic-coupon-status ic-coupon-status--ok';
-      } else if (coupon.cfg && !coupon.finalTier) {
-        // Known code but invalid combo (only case today: VIP + Zoom)
+      } else if (s === 'wrong_mode') {
         status.hidden = false;
         status.textContent = 'This code is for in-person only';
+        status.className = 'ic-coupon-status ic-coupon-status--warn';
+      } else if (s === 'error') {
+        status.hidden = false;
+        status.textContent = 'Couldn’t verify the code. Try again or proceed and we’ll re-check.';
         status.className = 'ic-coupon-status ic-coupon-status--warn';
       } else {
         status.hidden = false;
@@ -137,11 +197,15 @@
     r.addEventListener('change', updateTotal);
   });
 
-  // ---- coupon code input — live re-price on every keystroke ----
+  // ---- coupon code input — debounced server lookup, then re-price ----
   var couponInputEl = $('ic-coupon-input');
   if (couponInputEl) {
-    couponInputEl.addEventListener('input', updateTotal);
-    couponInputEl.addEventListener('blur', updateTotal);
+    couponInputEl.addEventListener('input', scheduleCouponLookup);
+    // On blur, force an immediate lookup (no debounce) so tab-out finalizes
+    couponInputEl.addEventListener('blur', function () {
+      clearTimeout(_couponLookupTimer);
+      lookupCoupon(couponInputEl.value);
+    });
   }
 
   // ---- access mode (In-Person / Zoom) ----
@@ -170,6 +234,11 @@
       if (vipTile) vipTile.classList.remove('disabled');
       if (vipNote) vipNote.hidden = true;
       if (vipRadio) vipRadio.disabled = false;
+    }
+    // Recompute coupon state — finalTier depends on access_mode (e.g. a Regular
+    // code becomes regular_zoom when switching to Zoom). Use cached cfg if any.
+    if (_couponState.code) {
+      _couponState = applyCouponToState(_couponState.code, _couponState.cfg);
     }
     updateTotal();
   }
