@@ -420,8 +420,26 @@
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: var(--radius);
-      overflow: hidden;
+      /* horizontal scroll when columns overflow; keep vertical clean */
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
       margin-bottom: 8px;
+    }
+    /* Subtle dark-mode scrollbar so the scroll affordance is visible
+       without dominating the card. */
+    .table-wrap::-webkit-scrollbar {
+      height: 8px;
+    }
+    .table-wrap::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.03);
+    }
+    .table-wrap::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.18);
+      border-radius: 4px;
+    }
+    .table-wrap::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.3);
     }
 
     table {
