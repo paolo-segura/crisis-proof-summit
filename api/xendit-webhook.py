@@ -181,17 +181,25 @@ def _render_template(template_str, tokens):
 
 
 def _zoom_join_block(zoom_url):
-    """Return the HTML fragment for the Join Zoom button, or a fallback note."""
+    """Return the HTML fragment for the Zoom registration button, or a fallback note.
+
+    The May 9 Zoom meeting requires per-attendee registration (BU_ZOOM_JOIN_URL
+    is the registration URL, not a direct join link). After registering on
+    Zoom, attendees receive their personal join link by email from Zoom.
+    """
     if zoom_url:
         return (
             '<a href="{url}" style="display:inline-block; padding:12px 24px; '
             'background-color:#F59E0B; color:#0F1B2E; font-size:14px; font-weight:700; '
-            'border-radius:999px; text-decoration:none;">Join Zoom →</a>'
+            'border-radius:999px; text-decoration:none;">Register for Zoom Access →</a>'
+            '<p style="margin:12px 0 0 0; font-size:13px; color:#94A3B8; line-height:1.55;">'
+            'One quick step: register on Zoom (takes 30 seconds). Zoom will email you '
+            'your personal join link — that\'s what you use on May 9.</p>'
         ).format(url=zoom_url)
     else:
         return (
             '<p style="margin:0; font-size:14px; color:#CBD5E1; line-height:1.55;">'
-            'Zoom link will be sent 24 hours before the summit. '
+            'Zoom registration link will be sent 24 hours before the summit. '
             'Keep an eye on your inbox.</p>'
         )
 
