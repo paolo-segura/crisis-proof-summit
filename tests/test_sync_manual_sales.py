@@ -423,3 +423,106 @@ def test_run_sync_returns_empty_when_sheet_unconfigured():
     assert result["success"] is True
     assert result["rows_upserted"] == 0
     assert upserted == []
+
+
+# ---------- orphan pruning ----------
+
+def test_run_sync_prunes_warm_orphans_after_upsert():
+    """After upserting current warm rows, prune is called with the exact set
+    of warm order_ids the parser produced. Form-tab order_ids are NOT
+    included — pruning is scoped to warm tier only."""
+    fake_tabs = {
+        "BUS: BULK Warm": [
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"],
+        ],
+        "Bulk 1000": [
+            ["Timestamp", "Full Name", "Mobile Number", "Email Address",
+             "Which describes you?", "What type of business/company do you have?",
+             "Who referred you to this event?", "How would you like to attend?",
+             "Select Registration Type", "Upload Proof of Payment:"],
+            ["5/2/2026", "Marife", "09953348067", "Mafe@x.com",
+             "Owner", "Retail", "Gencys", "Face-to-Face", "P1000",
+             "https://drive.google.com/proof.jpg"],
+        ],
+    }
+    upserted = []
+    pruned_with = []
+
+    def fake_prune(expected_ids):
+        pruned_with.append(set(expected_ids))
+        return 7  # pretend 7 orphans were deleted
+
+    result = sms.run_sync(
+        read_tabs=lambda: fake_tabs,
+        upsert=upserted.append,
+        write_log=lambda _: None,
+        prune_warm_orphans=fake_prune,
+    )
+
+    assert result["success"] is True
+    assert result["rows_upserted"] == 3  # 2 warm + 1 bulk
+    assert result["rows_pruned"] == 7
+    assert len(pruned_with) == 1
+    # Only the 2 warm order_ids — the bulk_1000 row is excluded
+    expected = {p["order_id"] for p in upserted if p["ticket_tier"] == "warm"}
+    assert pruned_with[0] == expected
+    assert len(expected) == 2
+
+
+def test_run_sync_skips_prune_when_no_warm_rows_parsed():
+    """Defensive: if the warm tab fails to parse (or is missing), the
+    expected warm set is empty and we MUST NOT call prune. Wiping the
+    warm rows on a transient sheet error would be a disaster."""
+    fake_tabs = {}  # empty — simulates MANUAL_SALES_SHEET_ID unset
+    pruned_with = []
+
+    def fake_prune(expected_ids):
+        pruned_with.append(set(expected_ids))
+        return 0
+
+    result = sms.run_sync(
+        read_tabs=lambda: fake_tabs,
+        upsert=lambda _: None,
+        write_log=lambda _: None,
+        prune_warm_orphans=fake_prune,
+    )
+
+    assert pruned_with == []
+    assert result["rows_pruned"] == 0
+
+
+def test_run_sync_records_prune_failure_without_aborting():
+    """Prune raising an exception shouldn't lose the upsert work that
+    already happened. The error gets logged and surfaced in the response."""
+    fake_tabs = {
+        "BUS: BULK Warm": [
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ", "1000", "1"],
+        ],
+    }
+    upserted = []
+
+    def flaky_prune(_):
+        raise RuntimeError("supabase delete failed")
+
+    result = sms.run_sync(
+        read_tabs=lambda: fake_tabs,
+        upsert=upserted.append,
+        write_log=lambda _: None,
+        prune_warm_orphans=flaky_prune,
+    )
+
+    assert result["rows_upserted"] == 1  # upsert still happened
+    assert result["success"] is False
+    assert any(e.get("phase") == "prune" for e in result["errors"])
+
+
+def test_supabase_prune_warm_orphans_no_op_on_empty_set():
+    """The helper itself must short-circuit on an empty expected set
+    before issuing any DELETE — defense in depth alongside run_sync's
+    own check."""
+    # Don't import sync_payments here — the function should never reach the
+    # supabase request layer when expected set is empty.
+    deleted = sms.supabase_prune_warm_orphans(set())
+    assert deleted == 0

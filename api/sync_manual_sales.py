@@ -514,6 +514,43 @@ def supabase_write_log(log):
     sp.supabase_write_sync_log(log)
 
 
+def supabase_prune_warm_orphans(expected_order_ids):
+    """Delete manual+warm rows whose order_id is NOT in `expected_order_ids`.
+
+    Self-heals stale orphans left behind by older sync versions whose
+    identity scheme has since changed (e.g. before the tab rename, before
+    the inline-name-split fix, before the colon-name fix). Idempotent:
+    subsequent calls with the same expected set are no-ops.
+
+    Returns the number of rows deleted (best-effort int).
+
+    Defensive: returns 0 without doing anything when the expected set is
+    empty, so a transient sheet-read failure (or an unconfigured
+    MANUAL_SALES_SHEET_ID) can never wipe the warm rows.
+    """
+    import sync_payments as sp  # noqa: WPS433
+    from urllib.parse import quote
+
+    if not expected_order_ids:
+        return 0
+
+    # PostgREST `in.()` takes comma-separated values; our order_ids are
+    # alphanumeric + hyphen so URL-encoding is overkill but cheap insurance.
+    ids_csv = ",".join(quote(oid, safe="") for oid in expected_order_ids)
+
+    path = (
+        f"{sp.PURCHASES_TABLE}"
+        f"?payment_provider=eq.manual"
+        f"&ticket_tier=eq.warm"
+        f"&order_id=not.in.({ids_csv})"
+    )
+    result = sp._supabase_request(
+        "DELETE", path,
+        extra_headers={"Prefer": "return=representation"},
+    )
+    return len(result) if isinstance(result, list) else 0
+
+
 # ---------------------------------------------------------------------------
 # Orchestrator (testable via injected I/O)
 # ---------------------------------------------------------------------------
@@ -567,13 +604,20 @@ def _iso_now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-def run_sync(read_tabs, upsert, write_log):
+def run_sync(read_tabs, upsert, write_log, prune_warm_orphans=None):
     """One sync cycle. All I/O injected. Returns a result dict and writes
-    a row to new_business_normal_sync_log (best-effort)."""
+    a row to new_business_normal_sync_log (best-effort).
+
+    If `prune_warm_orphans` is provided, after upserts complete we delete
+    any manual+warm rows in Supabase whose order_id isn't in the current
+    sync's expected warm set. This self-heals stale orphans from older
+    sync versions whose identity scheme has since changed.
+    """
     started_at = _iso_now()
     errors = []
     rows_read = 0
     rows_upserted = 0
+    rows_pruned = 0
 
     try:
         tabs_data = read_tabs()
@@ -592,6 +636,21 @@ def run_sync(read_tabs, upsert, write_log):
                     "order_id": purchase.get("order_id"),
                     "error": str(exc),
                 })
+
+        # Prune stale orphans only when the current sheet read produced a
+        # non-empty expected warm set. The supabase_prune_warm_orphans
+        # helper has its own empty-set guard, but adding the check here
+        # keeps the intent explicit at the call site.
+        if prune_warm_orphans is not None:
+            expected_warm_ids = {
+                p["order_id"] for p in purchases
+                if p.get("ticket_tier") == "warm"
+            }
+            if expected_warm_ids:
+                try:
+                    rows_pruned = prune_warm_orphans(expected_warm_ids)
+                except Exception as exc:  # noqa: BLE001
+                    errors.append({"phase": "prune", "error": str(exc)})
 
         success = len(errors) == 0
 
@@ -621,6 +680,7 @@ def run_sync(read_tabs, upsert, write_log):
         "finished_at":     finished_at,
         "rows_read":       rows_read,
         "rows_upserted":   rows_upserted,
+        "rows_pruned":     rows_pruned,
         "errors":          errors,
         "success":         success,
         "source":          "manual_sales",

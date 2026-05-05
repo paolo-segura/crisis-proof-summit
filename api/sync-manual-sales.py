@@ -53,6 +53,7 @@ class handler(BaseHTTPRequestHandler):
                 read_tabs=sms.read_manual_sheet,
                 upsert=sms.supabase_upsert_manual,
                 write_log=sms.supabase_write_log,
+                prune_warm_orphans=sms.supabase_prune_warm_orphans,
             )
             _send_json(self, 200, result)
         except Exception as exc:  # noqa: BLE001
