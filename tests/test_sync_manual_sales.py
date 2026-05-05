@@ -32,13 +32,13 @@ def test_parse_payment_non_numeric_returns_zero():
 # ---------- order_id stability ----------
 
 def test_make_order_id_is_deterministic():
-    a = sms.make_order_id("BUS: Warm", "z2m|cj-estavillo")
-    b = sms.make_order_id("BUS: Warm", "z2m|cj-estavillo")
+    a = sms.make_order_id("BUS: BULK Warm", "z2m|cj-estavillo")
+    b = sms.make_order_id("BUS: BULK Warm", "z2m|cj-estavillo")
     assert a == b
 
 def test_make_order_id_differs_per_identity():
-    a = sms.make_order_id("BUS: Warm", "z2m|cj-estavillo")
-    b = sms.make_order_id("BUS: Warm", "z2m|earlbin-fabian")
+    a = sms.make_order_id("BUS: BULK Warm", "z2m|cj-estavillo")
+    b = sms.make_order_id("BUS: BULK Warm", "z2m|earlbin-fabian")
     assert a != b
 
 def test_make_order_id_has_expected_prefix():
@@ -75,12 +75,19 @@ def test_parse_warm_names_empty_cell():
 # ---------- warm row -> purchases ----------
 
 def _warm_col_map():
+    """Production sheet headers (post Apr 2026 rename): Amount/Quantity."""
+    header = ["", "Company Name", "Name", "Amount", "Quantity"]
+    return sms.build_col_map(header, sms._WARM_COL_ALIASES)
+
+
+def _legacy_warm_col_map():
+    """Legacy headers (pre-rename) — should still resolve via aliases."""
     header = ["", "Company Name", "Name", "Payment"]
     return sms.build_col_map(header, sms._WARM_COL_ALIASES)
 
 
 def test_parse_warm_row_splits_payment_evenly():
-    row = ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"]
+    row = ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"]
     purchases = sms.parse_warm_row(row, _warm_col_map(), row_idx=2)
     assert len(purchases) == 2
     assert all(p["amount"] == 7000.0 for p in purchases)
@@ -93,17 +100,17 @@ def test_parse_warm_row_splits_payment_evenly():
 
 def test_parse_warm_row_skips_when_payment_empty():
     """Paolo's rule: only count rows where Payment is filled."""
-    row = ["warm", "DEF", "1. Mar\n2. Joshua\n3. Amiel", ""]
+    row = ["warm", "DEF", "1. Mar\n2. Joshua\n3. Amiel", "", "3"]
     assert sms.parse_warm_row(row, _warm_col_map(), row_idx=4) == []
 
 
 def test_parse_warm_row_skips_when_payment_zero():
-    row = ["warm", "DEF", "1. Mar", "0"]
+    row = ["warm", "DEF", "1. Mar", "0", "1"]
     assert sms.parse_warm_row(row, _warm_col_map(), row_idx=4) == []
 
 
 def test_parse_warm_row_handles_pax_pattern():
-    row = ["warm", "AJ3 Cool Aire", "1.John Concina 4 pax", "8000"]
+    row = ["warm", "AJ3 Cool Aire", "1.John Concina 4 pax", "8000", "4"]
     purchases = sms.parse_warm_row(row, _warm_col_map(), row_idx=3)
     assert len(purchases) == 4
     assert all(p["amount"] == 2000.0 for p in purchases)
@@ -111,20 +118,60 @@ def test_parse_warm_row_handles_pax_pattern():
     assert len({p["order_id"] for p in purchases}) == 4
 
 
-def test_parse_warm_row_falls_back_when_names_empty():
-    """Payment filled but no names listed - still record one anonymous attendee."""
-    row = ["warm", "Aircon King", "", "5000"]
+def test_parse_warm_row_uses_quantity_when_names_undercount():
+    """Aircon King: 18 names listed but client recorded Quantity=20.
+    Trust the Quantity column and pad the missing 2 attendees as placeholders."""
+    names = "\n".join(f"{i}. Person {i}" for i in range(1, 19))
+    row = ["warm", "Aircon King", names, "1000", "20"]
     purchases = sms.parse_warm_row(row, _warm_col_map(), row_idx=5)
-    assert len(purchases) == 1
-    assert purchases[0]["amount"] == 5000.0
-    assert "Aircon King" in purchases[0]["full_name"]
+    assert len(purchases) == 20
+    assert all(p["amount"] == 50.0 for p in purchases)  # 1000 / 20
+    # First 18 named, last 2 padded
+    placeholder_names = [p["full_name"] for p in purchases if "(" in p["full_name"] and "/" in p["full_name"]]
+    assert len(placeholder_names) == 2
+
+
+def test_parse_warm_row_skips_when_no_count_signal():
+    """Cool Xpert: payment filled but Quantity blank AND Names empty.
+    Treat as incomplete and skip — matches the client's 'Total leads:' count
+    which doesn't include this row either."""
+    row = ["warm", "Cool Xpert", "", "1999", ""]
+    assert sms.parse_warm_row(row, _warm_col_map(), row_idx=8) == []
+
+
+def test_parse_warm_row_falls_back_to_names_count_when_quantity_missing():
+    """Legacy header (no Quantity column) — names count is authoritative."""
+    row = ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"]
+    purchases = sms.parse_warm_row(row, _legacy_warm_col_map(), row_idx=2)
+    assert len(purchases) == 2
+    assert all(p["amount"] == 7000.0 for p in purchases)
 
 
 def test_parse_warm_row_idempotent():
-    row = ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"]
+    row = ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"]
     a = sms.parse_warm_row(row, _warm_col_map(), row_idx=2)
     b = sms.parse_warm_row(row, _warm_col_map(), row_idx=2)
     assert {p["order_id"] for p in a} == {p["order_id"] for p in b}
+
+
+def test_parse_warm_row_inline_numbered_split():
+    """timfintiy row in production: '1. CHERILYN ABELLANA 2. JESTER ORILLA'
+    on one line should parse as 2 attendees, not 1."""
+    row = ["gencys partner", "timfintiy", "1. CHERILYN ABELLANA 2. JESTER ORILLA", "1000", "2"]
+    purchases = sms.parse_warm_row(row, _warm_col_map(), row_idx=12)
+    assert len(purchases) == 2
+    names = [p["full_name"] for p in purchases]
+    assert "CHERILYN ABELLANA" in names
+    assert "JESTER ORILLA" in names
+
+
+def test_parse_warm_row_colon_numbered_names():
+    """Aircon King row uses '15:Foo' colon notation for some names."""
+    cell = "1. Foo\n2. Bar\n15:Baz"
+    row = ["warm", "Test Co", cell, "300", "3"]
+    purchases = sms.parse_warm_row(row, _warm_col_map(), row_idx=5)
+    names = [p["full_name"] for p in purchases]
+    assert "Baz" in names  # not "15:Baz"
 
 
 # ---------- header normalization (Google Form multi-line headers) ----------
@@ -256,10 +303,10 @@ def test_parse_form_row_idempotent_on_email():
 
 def test_parse_all_tabs_combines_warm_and_form():
     tabs = {
-        "BUS: Warm": [
-            ["", "Company Name", "Name", "Payment"],
-            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"],
-            ["warm", "DEF", "1. Skipped\n2. NoPay", ""],  # skipped - no payment
+        "BUS: BULK Warm": [
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"],
+            ["warm", "DEF", "1. Skipped\n2. NoPay", "", "2"],  # skipped - no payment
         ],
         "Bulk 1000": [
             ["Timestamp", "Full Name", "Mobile Number", "Email Address",
@@ -276,7 +323,24 @@ def test_parse_all_tabs_combines_warm_and_form():
     # 2 from Z2M (split warm) + 1 form-tab row = 3
     assert len(purchases) == 3
     tabs_seen = {p["_meta_tab"] for p in purchases}
-    assert tabs_seen == {"BUS: Warm", "Bulk 1000"}
+    assert tabs_seen == {"BUS: BULK Warm", "Bulk 1000"}
+
+
+def test_parse_all_tabs_skips_warm_annotation_rows():
+    """Production sheet has a 'Total leads: 57' banner above the header. The
+    parser must auto-detect the real header row instead of treating row 0 as it."""
+    tabs = {
+        "BUS: BULK Warm": [
+            ["", "", "", "", "Total leads:"],
+            ["", "", "", "", "57"],
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"],
+        ],
+    }
+    purchases, errors = sms.parse_all_tabs(tabs)
+    assert errors == []
+    assert len(purchases) == 2
+    assert all(p["_meta_tab"] == "BUS: BULK Warm" for p in purchases)
 
 
 def test_parse_all_tabs_skips_complimentary_implicitly():
@@ -292,18 +356,18 @@ def test_parse_all_tabs_skips_complimentary_implicitly():
 
 
 def test_parse_all_tabs_handles_missing_required_warm_columns():
-    tabs = {"BUS: Warm": [["wrong", "headers"], ["warm", "Z2M"]]}
+    tabs = {"BUS: BULK Warm": [["wrong", "headers"], ["warm", "Z2M"]]}
     _, errors = sms.parse_all_tabs(tabs)
-    assert any(e.get("tab") == "BUS: Warm" for e in errors)
+    assert any(e.get("tab") == "BUS: BULK Warm" for e in errors)
 
 
 # ---------- run_sync orchestrator with injected I/O ----------
 
 def test_run_sync_calls_upsert_for_each_purchase():
     fake_tabs = {
-        "BUS: Warm": [
-            ["", "Company Name", "Name", "Payment"],
-            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"],
+        "BUS: BULK Warm": [
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"],
         ],
     }
     upserted = []
@@ -325,9 +389,9 @@ def test_run_sync_calls_upsert_for_each_purchase():
 def test_run_sync_records_upsert_failures_without_aborting():
     """One bad row shouldn't kill the whole sync."""
     fake_tabs = {
-        "BUS: Warm": [
-            ["", "Company Name", "Name", "Payment"],
-            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000"],
+        "BUS: BULK Warm": [
+            ["", "Company Name", "Name", "Amount", "Quantity"],
+            ["warm", "Z2M", "1. CJ\n2. Earlbin", "14000", "2"],
         ],
     }
     calls = {"n": 0}

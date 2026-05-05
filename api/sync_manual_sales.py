@@ -35,7 +35,7 @@ import re
 # Tab configuration
 # ---------------------------------------------------------------------------
 
-WARM_TAB = "BUS: Warm"
+WARM_TAB = "BUS: BULK Warm"
 
 # Form-style tabs. tier value is what we write to ticket_tier; default_amount
 # is the fallback price when the row's Registration Type cell can't be parsed.
@@ -64,11 +64,16 @@ _FORM_COL_ALIASES = {
 }
 
 # Warm-tab column aliases.
+# "payment" matches both the legacy "Payment" header and the current "Amount"
+# header (client renamed the column some time after the original sync was
+# written). "quantity" is the client-maintained authoritative count cell —
+# preferred over parsing Names so the dashboard total matches "Total leads:".
 _WARM_COL_ALIASES = {
     "tag":      [""],            # col A is unlabeled ('warm')
     "company":  ["company name"],
     "names":    ["name", "names"],
-    "payment":  ["payment"],
+    "payment":  ["amount", "payment"],
+    "quantity": ["quantity", "qty"],
 }
 
 
@@ -147,6 +152,24 @@ def build_col_map(header_row, aliases):
     return resolved
 
 
+def find_header_row(rows, aliases, required_keys, max_scan=10):
+    """Find the first row that resolves all `required_keys` via the alias map.
+
+    Some tabs (notably 'BUS: BULK Warm') prefix the data with annotation rows
+    such as a "Total leads: 57" banner. Scanning for the actual header row
+    means the parser keeps working even when the client adds or removes
+    leading rows.
+
+    Returns (header_idx, col_map) or (None, {}) when no header row is found
+    in the first `max_scan` rows.
+    """
+    for i, row in enumerate(rows[:max_scan]):
+        candidate = build_col_map(row, aliases)
+        if all(key in candidate for key in required_keys):
+            return i, candidate
+    return None, {}
+
+
 def _cell(row, col_map, key, default=""):
     idx = col_map.get(key)
     if idx is None or idx >= len(row):
@@ -162,6 +185,14 @@ def _cell(row, col_map, key, default=""):
 # Matches numbered list items inside the multi-line Names cell:
 #   "1. Mar Christopher Sison" / "2) Joshua" / "10. Tyok Aguilar"
 _NAME_NUMBERED = re.compile(r"^\s*\d+\s*[.)]\s*(.+?)\s*$")
+
+# Matches colon-style numbering used in some rows: "15:Jeeve Russel Lobregat".
+_NAME_COLON = re.compile(r"^\s*\d+\s*:\s*(.+?)\s*$")
+
+# Splits inline numbered lists into separate names. Some rows pack multiple
+# attendees onto one line: "1. CHERILYN ABELLANA 2. JESTER ORILLA". Without
+# this the entire string was treated as a single attendee.
+_NAME_INLINE_SPLIT = re.compile(r"\s*\b\d+\s*[.)]\s*")
 
 # Matches "John Concina 4 pax" - a single name plus a pax count.
 _NAME_PAX = re.compile(r"^\s*\d*\s*[.)]?\s*(.+?)\s+(\d+)\s*pax\s*$", re.IGNORECASE)
@@ -192,21 +223,61 @@ def parse_warm_names(cell):
             count = int(pax_match.group(2))
             out.append((name, count))
             continue
+        # Inline numbered list: "1. CHERILYN 2. JESTER" → split into 2 names.
+        # Only fire when the split produces 2+ parts so a normal "1. Foo" line
+        # falls through to the single-name branch below.
+        parts = [p.strip() for p in _NAME_INLINE_SPLIT.split(line) if p.strip()]
+        if len(parts) > 1:
+            for p in parts:
+                out.append((p, 1))
+            continue
         num_match = _NAME_NUMBERED.match(line)
         if num_match:
             out.append((num_match.group(1).strip(), 1))
+            continue
+        colon_match = _NAME_COLON.match(line)
+        if colon_match:
+            out.append((colon_match.group(1).strip(), 1))
             continue
         # Unnumbered non-empty line - take it as a single attendee
         out.append((line, 1))
     return out
 
 
+def _parse_quantity(raw):
+    """Parse the warm-tab Quantity cell. '14' / '14.0' / ' 14 ' -> 14, blank
+    or unparseable -> 0. Quantity is the client's authoritative attendee
+    count; we trust it over the parsed-names count when both are present."""
+    if raw is None:
+        return 0
+    s = str(raw).strip()
+    if not s:
+        return 0
+    digits = re.sub(r"[^0-9.]", "", s)
+    if not digits or digits == ".":
+        return 0
+    try:
+        return int(float(digits))
+    except (ValueError, TypeError):
+        return 0
+
+
 def parse_warm_row(row, col_map, row_idx):
     """Parse one Warm-tab row into a list of purchase dicts (one per attendee).
 
+    Attendee count is Quantity (client-maintained) when set, otherwise the
+    parsed-names count. Payment is split evenly across all attendees.
+
+    When Quantity > parsed names, the leftover slots are recorded as numbered
+    placeholders ("Acme Co (19/20)") so the dashboard total matches the
+    sheet's "Total leads:" cell even when the client hasn't filled in every
+    attendee name.
+
     Returns [] when:
       - Payment cell is empty / unparseable / 0
-      - Company is empty (defensive - shouldn't happen)
+      - Company is empty (defensive)
+      - No count signal at all (no Quantity, no Names) — treated as an
+        incomplete row the client is still filling in.
     """
     company = str(_cell(row, col_map, "company")).strip()
     if not company:
@@ -217,34 +288,51 @@ def parse_warm_row(row, col_map, row_idx):
         return []  # rule: only count when Payment is filled
 
     parsed_names = parse_warm_names(_cell(row, col_map, "names"))
+    names_total = sum(count for _, count in parsed_names)
+    sheet_qty = _parse_quantity(_cell(row, col_map, "quantity"))
 
-    if parsed_names:
-        total_pax = sum(count for _, count in parsed_names)
-        per_pax_amount = round(payment / total_pax, 2) if total_pax else payment
-        purchases = []
-        for attendee_name, count in parsed_names:
-            for n in range(count):
-                # Identity per attendee. When count>1 ("4 pax") we differentiate
-                # by suffix so each pax gets a stable but distinct order_id.
-                identity = f"{_slug(company)}|{_slug(attendee_name)}|{n}" if count > 1 else f"{_slug(company)}|{_slug(attendee_name)}"
-                purchases.append(_warm_purchase(
-                    company=company,
-                    attendee_name=attendee_name if count == 1 else f"{attendee_name} ({n+1}/{count})",
-                    amount=per_pax_amount,
-                    identity=identity,
-                ))
-        return purchases
+    # Quantity wins when set; otherwise fall back to parsed names count.
+    total_pax = sheet_qty if sheet_qty > 0 else names_total
+    if total_pax <= 0:
+        return []
 
-    # Names cell empty - fall back to a single anonymous attendee for the
-    # full payment. Keep the row visible in the dashboard so the operator
-    # notices the missing attendee names.
-    identity = f"{_slug(company)}|row{row_idx}"
-    return [_warm_purchase(
-        company=company,
-        attendee_name=f"{company} (unnamed)",
-        amount=payment,
-        identity=identity,
-    )]
+    per_pax_amount = round(payment / total_pax, 2)
+    purchases = []
+    consumed = 0
+
+    for attendee_name, count in parsed_names:
+        for n in range(count):
+            if consumed >= total_pax:
+                break
+            identity = (
+                f"{_slug(company)}|{_slug(attendee_name)}|{n}"
+                if count > 1 else
+                f"{_slug(company)}|{_slug(attendee_name)}"
+            )
+            purchases.append(_warm_purchase(
+                company=company,
+                attendee_name=attendee_name if count == 1 else f"{attendee_name} ({n+1}/{count})",
+                amount=per_pax_amount,
+                identity=identity,
+            ))
+            consumed += 1
+        if consumed >= total_pax:
+            break
+
+    # Pad with placeholders when Quantity > parsed names. Identity includes
+    # row_idx + slot so the placeholder is stable across re-syncs.
+    while consumed < total_pax:
+        slot = consumed + 1
+        identity = f"{_slug(company)}|row{row_idx}|pad{slot}"
+        purchases.append(_warm_purchase(
+            company=company,
+            attendee_name=f"{company} ({slot}/{total_pax})",
+            amount=per_pax_amount,
+            identity=identity,
+        ))
+        consumed += 1
+
+    return purchases
 
 
 def _warm_purchase(company, attendee_name, amount, identity):
@@ -436,12 +524,15 @@ def parse_all_tabs(tabs_data):
     purchases = []
     parse_errors = []
 
-    # Warm
+    # Warm — scan for the header row to skip annotation banners (e.g. the
+    # client-maintained "Total leads: N" rows above the column titles).
     warm_rows = tabs_data.get(WARM_TAB, [])
     if warm_rows:
-        col_map = build_col_map(warm_rows[0], _WARM_COL_ALIASES)
-        if "company" in col_map and "payment" in col_map:
-            for i, row in enumerate(warm_rows[1:], start=2):
+        header_idx, col_map = find_header_row(
+            warm_rows, _WARM_COL_ALIASES, required_keys=("company", "payment")
+        )
+        if header_idx is not None:
+            for i, row in enumerate(warm_rows[header_idx + 1:], start=header_idx + 2):
                 try:
                     purchases.extend(parse_warm_row(row, col_map, row_idx=i))
                 except Exception as exc:  # noqa: BLE001
@@ -454,11 +545,13 @@ def parse_all_tabs(tabs_data):
         rows = tabs_data.get(tab, [])
         if not rows:
             continue
-        col_map = build_col_map(rows[0], _FORM_COL_ALIASES)
-        if "full_name" not in col_map:
+        header_idx, col_map = find_header_row(
+            rows, _FORM_COL_ALIASES, required_keys=("full_name",)
+        )
+        if header_idx is None:
             parse_errors.append({"tab": tab, "error": "missing Full Name column"})
             continue
-        for i, row in enumerate(rows[1:], start=2):
+        for i, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
             try:
                 p = parse_form_row(row, col_map, tab, cfg["tier"], cfg["default_amount"])
                 if p is not None:
