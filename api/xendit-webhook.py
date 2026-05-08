@@ -23,11 +23,12 @@ Optional (for post-purchase confirmation email):
   - BREVO_API_KEY           — if unset, email send is skipped (logged)
   - BREVO_SENDER_EMAIL      — defaults to hello@exponential-university.live
   - BREVO_SENDER_NAME       — defaults to Business Unlocked
-  - BU_ZOOM_JOIN_URL        — Zoom registration URL. Used by Zoom-tier
-                              confirmations (primary access) AND in-person
-                              confirmations (hybrid backup section). If unset,
-                              Zoom emails show a "link coming 24h before" note;
-                              in-person emails simply omit the backup section.
+  - BU_ZOOM_JOIN_URL        — Direct Zoom join URL (one click, no
+                              registration). Used by Zoom-tier confirmations
+                              (primary access) AND in-person confirmations
+                              (hybrid backup section). If unset, Zoom emails
+                              show a "link coming 24h before" note; in-person
+                              emails simply omit the backup section.
 """
 
 from http.server import BaseHTTPRequestHandler
@@ -184,25 +185,27 @@ def _render_template(template_str, tokens):
 
 
 def _zoom_join_block(zoom_url):
-    """Return the HTML fragment for the Zoom registration button, or a fallback note.
+    """Return the HTML fragment for the Zoom join button, or a fallback note.
 
-    The May 9 Zoom meeting requires per-attendee registration (BU_ZOOM_JOIN_URL
-    is the registration URL, not a direct join link). After registering on
-    Zoom, attendees receive their personal join link by email from Zoom.
+    BU_ZOOM_JOIN_URL is a direct join link — clicking it walks the attendee
+    straight into the Zoom meeting on May 9. No registration step.
     """
     if zoom_url:
         return (
             '<a href="{url}" style="display:inline-block; padding:12px 24px; '
             'background-color:#F59E0B; color:#0F1B2E; font-size:14px; font-weight:700; '
-            'border-radius:999px; text-decoration:none;">Register for Zoom Access →</a>'
+            'border-radius:999px; text-decoration:none;">Join Zoom Live Stream →</a>'
             '<p style="margin:12px 0 0 0; font-size:13px; color:#94A3B8; line-height:1.55;">'
-            'One quick step: register on Zoom (takes 30 seconds). Zoom will email you '
-            'your personal join link — that\'s what you use on May 9.</p>'
+            'On May 9, click the button above to join the live stream. Save this email — '
+            'Meeting ID and passcode are below as backup if the link doesn\'t open.</p>'
+            '<p style="margin:10px 0 0 0; font-size:12px; color:#94A3B8; line-height:1.6;">'
+            'Meeting ID: <strong style="color:#FFFFFF;">871 1682 1488</strong> &nbsp;&bull;&nbsp; '
+            'Passcode: <strong style="color:#FFFFFF;">UNLOCKED</strong></p>'
         ).format(url=zoom_url)
     else:
         return (
             '<p style="margin:0; font-size:14px; color:#CBD5E1; line-height:1.55;">'
-            'Zoom registration link will be sent 24 hours before the summit. '
+            'Zoom join link will be sent 24 hours before the summit. '
             'Keep an eye on your inbox.</p>'
         )
 
@@ -211,9 +214,9 @@ def _hybrid_zoom_block_inperson(zoom_url):
     """Return the hybrid backup HTML block for in-person buyers.
 
     PTTC remains the primary path; this block tells the in-person buyer that
-    if the morning doesn't work for them, they can register on Zoom now,
-    catch the morning sessions live from anywhere, and walk into PTTC in
-    the afternoon.
+    if the morning doesn't work for them, they can join the Zoom live stream
+    directly, catch the morning sessions from anywhere, and walk into PTTC
+    in the afternoon.
 
     If BU_ZOOM_JOIN_URL is unset we return an empty string so the section
     simply doesn't render — better to ship the in-person email with no
@@ -231,20 +234,20 @@ def _hybrid_zoom_block_inperson(zoom_url):
         'Running late on May 9? You\'re covered.</p>'
         '<p style="margin:8px 0 14px 0; font-size:14px; color:#334155; line-height:1.6;">'
         'Your seat at PTTC is reserved. But if traffic, a meeting, or anything else '
-        'holds you up in the morning, <strong style="color:#0F1B2E;">register on Zoom in advance</strong> '
-        '&mdash; you won\'t miss the opening sessions, and you can <strong style="color:#0F1B2E;">walk into PTTC '
+        'holds you up in the morning, <strong style="color:#0F1B2E;">join the Zoom live stream from wherever you are</strong> '
+        '&mdash; one click, no registration &mdash; and <strong style="color:#0F1B2E;">walk into PTTC '
         'when you\'re free.</strong> Same room, same speakers.</p>'
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 0 0;">'
         '<tr><td style="border-radius:6px; background-color:{button_color};">'
         '<a href="{url}" style="display:inline-block; padding:12px 24px; '
         'background-color:{button_color}; color:#0F1B2E; font-size:14px; font-weight:700; '
         'border-radius:6px; text-decoration:none; letter-spacing:0.4px;">'
-        'Register for Zoom Backup &rarr;</a>'
+        'Join Zoom Live Stream &rarr;</a>'
         '</td></tr></table>'
         '<p style="margin:12px 0 0 0; font-size:12px; color:#94A3B8; line-height:1.6;">'
         'Meeting ID: <strong style="color:#334155;">871 1682 1488</strong> &nbsp;&bull;&nbsp; '
-        'Password: <strong style="color:#334155;">UNLOCKED</strong><br>'
-        'Zoom doors open 7 AM PHT &bull; Program starts 9 AM</p>'
+        'Passcode: <strong style="color:#334155;">UNLOCKED</strong><br>'
+        'Zoom opens 7 AM PHT &bull; Program starts 9 AM</p>'
         '</td></tr></table>'
         '</td></tr>'
     ).format(url=zoom_url, button_color=button_color)
