@@ -23,8 +23,11 @@ Optional (for post-purchase confirmation email):
   - BREVO_API_KEY           — if unset, email send is skipped (logged)
   - BREVO_SENDER_EMAIL      — defaults to hello@exponential-university.live
   - BREVO_SENDER_NAME       — defaults to Business Unlocked
-  - BU_ZOOM_JOIN_URL        — Zoom join URL for Zoom ticket holders; if unset,
-                              email falls back to a "link coming 24h before" note
+  - BU_ZOOM_JOIN_URL        — Zoom registration URL. Used by Zoom-tier
+                              confirmations (primary access) AND in-person
+                              confirmations (hybrid backup section). If unset,
+                              Zoom emails show a "link coming 24h before" note;
+                              in-person emails simply omit the backup section.
 """
 
 from http.server import BaseHTTPRequestHandler
@@ -204,6 +207,49 @@ def _zoom_join_block(zoom_url):
         )
 
 
+def _hybrid_zoom_block_inperson(zoom_url):
+    """Return the hybrid backup HTML block for in-person buyers.
+
+    PTTC remains the primary path; this block tells the in-person buyer that
+    if the morning doesn't work for them, they can register on Zoom now,
+    catch the morning sessions live from anywhere, and walk into PTTC in
+    the afternoon.
+
+    If BU_ZOOM_JOIN_URL is unset we return an empty string so the section
+    simply doesn't render — better to ship the in-person email with no
+    Zoom mention than to promise a backup link we can't deliver.
+    """
+    if not zoom_url:
+        return ""
+    button_color = "#F59E0B"
+    return (
+        '<tr><td class="p-32" style="padding:6px 32px 18px 32px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        'style="background-color:#FFF8EC; border-radius:14px; border:1px solid #FDE68A; border-left:4px solid #F59E0B;">'
+        '<tr><td class="card-pad" style="padding:22px 24px;">'
+        '<p style="margin:0 0 6px 0; font-size:11px; font-weight:700; letter-spacing:2.4px; color:#C2810E; text-transform:uppercase;">'
+        'Running late on May 9? You\'re covered.</p>'
+        '<p style="margin:8px 0 14px 0; font-size:14px; color:#334155; line-height:1.6;">'
+        'Your seat at PTTC is reserved. But if traffic, a meeting, or anything else '
+        'holds you up in the morning, <strong style="color:#0F1B2E;">register on Zoom in advance</strong> '
+        '&mdash; you won\'t miss the opening sessions, and you can <strong style="color:#0F1B2E;">walk into PTTC '
+        'when you\'re free.</strong> Same room, same speakers.</p>'
+        '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 0 0;">'
+        '<tr><td style="border-radius:6px; background-color:{button_color};">'
+        '<a href="{url}" style="display:inline-block; padding:12px 24px; '
+        'background-color:{button_color}; color:#0F1B2E; font-size:14px; font-weight:700; '
+        'border-radius:6px; text-decoration:none; letter-spacing:0.4px;">'
+        'Register for Zoom Backup &rarr;</a>'
+        '</td></tr></table>'
+        '<p style="margin:12px 0 0 0; font-size:12px; color:#94A3B8; line-height:1.6;">'
+        'Meeting ID: <strong style="color:#334155;">871 1682 1488</strong> &nbsp;&bull;&nbsp; '
+        'Password: <strong style="color:#334155;">UNLOCKED</strong><br>'
+        'Zoom doors open 7 AM PHT &bull; Program starts 9 AM</p>'
+        '</td></tr></table>'
+        '</td></tr>'
+    ).format(url=zoom_url, button_color=button_color)
+
+
 def _send_confirmation_email(email, full_name, tier_key):
     """Fire the appropriate post-purchase email via Brevo.
 
@@ -248,11 +294,14 @@ def _send_confirmation_email(email, full_name, tier_key):
         "tier_label": tier_label,
     }
 
+    zoom_url = os.environ.get("BU_ZOOM_JOIN_URL", "")
+    if not zoom_url:
+        print("[xendit-webhook] BU_ZOOM_JOIN_URL not set — using fallback text in confirmation email", flush=True)
+
     if is_zoom:
-        zoom_url = os.environ.get("BU_ZOOM_JOIN_URL", "")
-        if not zoom_url:
-            print("[xendit-webhook] BU_ZOOM_JOIN_URL not set — using fallback text in Zoom email", flush=True)
-        tokens["zoom_join_block"] = _zoom_join_block(zoom_url or "")
+        tokens["zoom_join_block"] = _zoom_join_block(zoom_url)
+    else:
+        tokens["hybrid_zoom_block"] = _hybrid_zoom_block_inperson(zoom_url)
 
     html = _render_template(template_str, tokens)
 
@@ -261,12 +310,20 @@ def _send_confirmation_email(email, full_name, tier_key):
 
     subject = "You're In — BUSINESS UNLOCKED · May 9, 2026"
 
-    payload = json.dumps({
+    payload_body = {
         "sender": {"email": sender_email, "name": sender_name},
         "to": [{"email": email, "name": full_name or email}],
         "subject": subject,
         "htmlContent": html,
-    }).encode("utf-8")
+    }
+    reply_to_email = os.environ.get("BREVO_REPLY_TO_EMAIL", "").strip()
+    if reply_to_email:
+        reply_to_name = os.environ.get("BREVO_REPLY_TO_NAME", "").strip()
+        payload_body["replyTo"] = (
+            {"email": reply_to_email, "name": reply_to_name}
+            if reply_to_name else {"email": reply_to_email}
+        )
+    payload = json.dumps(payload_body).encode("utf-8")
 
     req = urllib.request.Request(
         "https://api.brevo.com/v3/smtp/email",
